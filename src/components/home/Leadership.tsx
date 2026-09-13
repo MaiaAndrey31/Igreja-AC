@@ -1,18 +1,18 @@
 import Image from "next/image";
-import { leaders } from "@/data/leaders";
 import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
 import { MediaPlaceholder } from "@/components/ui/MediaPlaceholder";
+import type { Leader } from "@/lib/firebase/collections";
 
 /**
  * Liderança com tratamento humano — retrato real, nome em display, papel na
  * casa. Não é organograma nem página de funcionários, por isso só entram
- * aqui quem a igreja apresenta publicamente como liderança.
+ * aqui quem a igreja apresenta publicamente como liderança (cadastro em
+ * /admin/lideranca).
  *
- * 7 pessoas: grid 2 colunas no mobile, 3 no tablet, 4 no desktop — cartões
- * mais compactos que uma dupla em destaque pediria, já que agora é uma
- * equipe inteira, não dois nomes.
+ * Grid 2 colunas no mobile, 3 no tablet, 4 no desktop — cartões compactos que
+ * escalam bem tanto para uma dupla quanto para uma equipe inteira.
  */
-export function Leadership() {
+export function Leadership({ leaders }: { leaders: Leader[] }) {
   return (
     <section className="on-paper">
       <div className="mx-auto max-w-7xl px-5 py-24 sm:px-8 sm:py-32">
@@ -20,7 +20,7 @@ export function Leadership() {
 
         <ul className="mt-14 grid grid-cols-2 gap-x-6 gap-y-12 sm:grid-cols-3 sm:gap-x-8 lg:grid-cols-4">
           {leaders.map((leader) => (
-            <li key={leader.slug}>
+            <li key={leader.id}>
               <div className="relative aspect-[4/5] w-full overflow-hidden bg-surface-2">
                 {leader.photoUrl ? (
                   <Image

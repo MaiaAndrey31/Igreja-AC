@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CellFilterableGrid } from "@/components/celulas/CellFilterableGrid";
-import { getActiveCells } from "@/lib/data";
+import { getActiveCells, getUnitInfo } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Células",
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function CelulasPage() {
-  const cells = await getActiveCells();
+  const [cells, unit] = await Promise.all([getActiveCells(), getUnitInfo()]);
 
   return (
     <div>
@@ -25,7 +25,7 @@ export default async function CelulasPage() {
         meta={cells.length > 0 ? `${cells.length} células cadastradas` : undefined}
       />
       <div className="mx-auto max-w-7xl px-5 pb-24 sm:px-8 sm:pb-32">
-        <CellFilterableGrid cells={cells} />
+        <CellFilterableGrid cells={cells} unitName={unit.name} />
       </div>
     </div>
   );

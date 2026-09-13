@@ -1,21 +1,20 @@
 import type { Metadata } from "next";
 import { renderMinistryIcon } from "@/components/home/icon-map";
-import { unit, whatsappUrl } from "@/data/unit";
+import { whatsappUrl } from "@/lib/site";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { getPublishedMinistries } from "@/lib/data";
+import { getPublishedMinistries, getUnitInfo } from "@/lib/data";
 
-export const metadata: Metadata = {
-  title: "Ministérios",
-  description: `As frentes da ${unit.name} — cadastradas e mantidas pela própria igreja.`,
-  alternates: { canonical: "/ministerios" },
-};
-
-// Os ministérios são cadastrados em /admin/ministerios pela própria igreja —
-// precisam aparecer em tempo real, sem depender de cache de build.
-export const dynamic = "force-dynamic";
+export async function generateMetadata(): Promise<Metadata> {
+  const unit = await getUnitInfo();
+  return {
+    title: "Ministérios",
+    description: `As frentes da ${unit.name} — cadastradas e mantidas pela própria igreja.`,
+    alternates: { canonical: "/ministerios" },
+  };
+}
 
 export default async function MinisteriosPage() {
-  const ministries = await getPublishedMinistries();
+  const [ministries, unit] = await Promise.all([getPublishedMinistries(), getUnitInfo()]);
 
   return (
     <div>
@@ -71,7 +70,10 @@ export default async function MinisteriosPage() {
             Tem lugar para o que você sabe fazer.
           </p>
           <a
-            href={whatsappUrl(`Olá! Vim pelo site da ${unit.shortName} e quero servir em um ministério.`)}
+            href={whatsappUrl(
+              unit.contactPhoneE164,
+              `Olá! Vim pelo site da ${unit.shortName} e quero servir em um ministério.`
+            )}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-8 inline-flex items-center justify-center gap-2 bg-accent px-7 py-4 text-[11px] uppercase tracking-[0.18em] text-accent-contrast transition-opacity hover:opacity-85"

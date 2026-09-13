@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { unit } from "@/data/unit";
+import { getUnitInfo } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Direito de Imagem",
@@ -16,7 +16,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export default function DireitoDeImagemPage() {
+export default async function DireitoDeImagemPage() {
+  const unit = await getUnitInfo();
+
   return (
     <div>
       <PageHeader eyebrow="Jurídico" title="Direito de Imagem e Voz" />
@@ -60,10 +62,10 @@ export default function DireitoDeImagemPage() {
             <li>
               Envie um e-mail para{" "}
               <a
-                href={`mailto:${unit.contact.email}`}
+                href={`mailto:${unit.contactEmail}`}
                 className="text-foreground underline decoration-accent/50 underline-offset-2 hover:text-accent"
               >
-                {unit.contact.email}
+                {unit.contactEmail}
               </a>{" "}
               com o assunto &quot;Solicitação de remoção de imagem&quot;;
             </li>

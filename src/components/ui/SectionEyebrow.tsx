@@ -1,5 +1,12 @@
-import { unit } from "@/data/unit";
 import { cn } from "@/lib/utils";
+
+/** Mesmo valor de `UNIT_INFO_DEFAULTS.verseReference` — usado só como marca
+ * tipográfica decorativa (ver comentário abaixo), não como dado exibido em
+ * bloco. Páginas que já têm a unidade carregada podem passar `verseReference`
+ * para refletir uma edição feita em /admin/unidade; as demais (a maioria das
+ * páginas, via `PageHeader`) usam este texto de identidade, estável por
+ * natureza — não vale encadear `unit` por todo o site só por este detalhe. */
+const DEFAULT_VERSE_REFERENCE = "João 21:17";
 
 /**
  * Cabeça de seção: número + rótulo, com a referência de João 21:17 como marca
@@ -13,6 +20,7 @@ export function SectionEyebrow({
   index,
   children,
   mark = true,
+  verseReference = DEFAULT_VERSE_REFERENCE,
   className,
 }: {
   /** Número da seção, ex.: 3 → "03". */
@@ -20,6 +28,7 @@ export function SectionEyebrow({
   children: React.ReactNode;
   /** Desligue nas seções onde a marca competiria com outro elemento. */
   mark?: boolean;
+  verseReference?: string;
   className?: string;
 }) {
   return (
@@ -37,7 +46,7 @@ export function SectionEyebrow({
           aria-hidden="true"
           className="font-data shrink-0 text-[10px] tracking-normal text-foreground-subtle/70"
         >
-          {unit.verse.reference.replace("João ", "Jo ").replace(":", ".")}
+          {verseReference.replace("João ", "Jo ").replace(":", ".")}
         </span>
       )}
     </div>

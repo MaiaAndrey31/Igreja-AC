@@ -1,22 +1,24 @@
 import Image from "next/image";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
-import { unit } from "@/data/unit";
+import type { UnitInfo } from "@/lib/firebase/collections";
 
 /**
  * "Nossa história" — a narrativa mais forte que esta unidade tem: de uma
  * garagem, em 2013, a um templo próprio, em 2024. É a seção que segura a
  * home, então não esconde nem resume demais.
  *
- * Cada frase vem de `unit.originStory`/`unit.newTemple` — fatos verificados
- * (Instagram, Facebook, matéria da Folha Regional sobre a inauguração). Não
- * acrescente detalhe sem fonte.
+ * Cada frase vem de `unit.originStory`/`unit.newTempleStory`, editáveis em
+ * /admin/unidade — fatos verificados (Instagram, Facebook, matéria da Folha
+ * Regional sobre a inauguração). Não acrescente detalhe sem fonte.
  */
-export function OurStory() {
+export function OurStory({ unit }: { unit: UnitInfo }) {
   return (
     <section className="on-paper">
       <div className="mx-auto max-w-7xl px-5 py-24 sm:px-8 sm:py-32">
-        <SectionEyebrow index={1}>Nossa história</SectionEyebrow>
+        <SectionEyebrow index={1} verseReference={unit.verseReference}>
+          Nossa história
+        </SectionEyebrow>
 
         <Reveal className="mt-14 grid gap-10 sm:grid-cols-12">
           <div className="sm:col-span-8">
@@ -36,9 +38,9 @@ export function OurStory() {
 
           <div className="flex flex-col justify-center gap-4 bg-background p-8 sm:col-span-6 sm:p-12">
             <p className="font-data text-[11px] uppercase tracking-[0.2em] text-accent">
-              {unit.newTemple.year}
+              {unit.newTempleYear}
             </p>
-            <p className="text-base leading-relaxed text-foreground-muted">{unit.newTemple.story}</p>
+            <p className="text-base leading-relaxed text-foreground-muted">{unit.newTempleStory}</p>
           </div>
         </div>
 

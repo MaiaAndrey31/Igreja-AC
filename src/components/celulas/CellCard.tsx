@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { MapPin, Clock, MessageCircle } from "lucide-react";
 import { formatWhatsappLink } from "@/lib/format";
-import { unit } from "@/data/unit";
 
 export interface CellCardData {
   id: string;
@@ -14,7 +13,7 @@ export interface CellCardData {
   logoUrl?: string | null;
 }
 
-export function CellCard({ cell }: { cell: CellCardData }) {
+export function CellCard({ cell, unitName }: { cell: CellCardData; unitName: string }) {
   return (
     <article className="flex min-h-[360px] w-[290px] shrink-0 overflow-hidden rounded-3xl border border-border-subtle bg-surface shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:w-[330px]">
       <div className="flex w-full">
@@ -57,7 +56,7 @@ export function CellCard({ cell }: { cell: CellCardData }) {
           <a
             href={formatWhatsappLink(
               cell.whatsapp,
-              `Olá ${cell.leaderName}, vi a célula ${cell.name} no site da ${unit.name} e gostaria de saber mais.`
+              `Olá ${cell.leaderName}, vi a célula ${cell.name} no site da ${unitName} e gostaria de saber mais.`
             )}
             target="_blank"
             rel="noopener noreferrer"

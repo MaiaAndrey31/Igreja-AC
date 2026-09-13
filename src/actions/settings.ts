@@ -1,10 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { FieldValue } from "firebase-admin/firestore";
 import { siteSettingsDoc } from "@/lib/firebase/collections";
+import { db } from "@/lib/firebase/admin";
 import { requireAdminSession } from "@/lib/auth/session";
 import { siteSettingsSchema } from "@/lib/validation/schemas";
 import { saveImageUpload, saveVideoUpload, UploadValidationError } from "@/lib/upload";
+import { extractYoutubeId } from "@/lib/format";
 import type { ActionState } from "@/actions/auth";
 
 export async function updateSettingsAction(
@@ -18,7 +21,6 @@ export async function updateSettingsAction(
   const current = currentSnap.exists ? currentSnap.data() : undefined;
 
   let heroVideoUrl = current?.heroVideoUrl ?? "/videos/hero-placeholder.mp4";
-  let heroPosterUrl = current?.heroPosterUrl ?? "/videos/hero-poster.jpg";
 
   const videoFile = formData.get("heroVideoFile");
   if (videoFile instanceof File && videoFile.size > 0) {
@@ -31,22 +33,29 @@ export async function updateSettingsAction(
     }
   }
 
-  const posterFile = formData.get("heroPosterFile");
-  if (posterFile instanceof File && posterFile.size > 0) {
-    try {
-      const result = await saveImageUpload(posterFile);
-      heroPosterUrl = result.url;
-    } catch (err) {
-      if (err instanceof UploadValidationError) return { error: err.message };
-      return { error: "Falha ao processar a imagem de capa." };
-    }
+  // Link do YouTube pode vir como URL inteira (watch?v=, youtu.be/, /embed/,
+  // /shorts/) ou já o ID puro — `extractYoutubeId` aceita os dois formatos.
+  // Campo em branco mantém o ID já salvo (não obriga a igreja a colar de novo
+  // toda vez que só muda outro campo do formulário).
+  let heroYoutubeId = current?.heroYoutubeId ?? "";
+  const heroYoutubeInput = formData.get("heroYoutubeUrl");
+  if (typeof heroYoutubeInput === "string" && heroYoutubeInput.trim()) {
+    const extracted = extractYoutubeId(heroYoutubeInput);
+    if (!extracted) return { error: "Link do YouTube inválido. Cole a URL completa do vídeo ou o ID." };
+    heroYoutubeId = extracted;
   }
 
   const parsed = siteSettingsSchema.safeParse({
-    heroMediaType: formData.get("heroMediaType"),
+    // `?? undefined`: um campo ausente do FormData vira `null`, não
+    // `undefined` — e o `.default()` do Zod só substitui `undefined`. Sem
+    // isso, um `<input type="hidden">` que não chegou a ser enviado (ex.:
+    // ficou fora do ramo condicional certo em algum ponto do formulário)
+    // reprova a validação inteira em vez de cair no padrão.
+    heroMediaType: formData.get("heroMediaType") ?? undefined,
+    heroVideoSource: formData.get("heroVideoSource") ?? undefined,
     heroFocusY: formData.get("heroFocusY"),
     heroVideoUrl,
-    heroPosterUrl,
+    heroYoutubeId,
     heroTitle: formData.get("heroTitle"),
     heroSubtitle: formData.get("heroSubtitle"),
     donationText: formData.get("donationText"),
@@ -59,10 +68,58 @@ export async function updateSettingsAction(
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
-  await ref.set({ ...parsed.data, updatedAt: new Date() });
+  // `merge: true`: as fotos do carrossel (`heroPosterUrls`) vivem fora deste
+  // formulário — são gerenciadas por `addHeroPhotoAction`/
+  // `removeHeroPhotoAction` — um `.set()` sem merge substituiria o documento
+  // inteiro e apagaria a lista.
+  await ref.set({ ...parsed.data, updatedAt: new Date() }, { merge: true });
 
   revalidatePath("/");
   revalidatePath("/contribua");
   revalidatePath("/admin/configuracoes");
   return { success: true };
+}
+
+const SETTINGS_COLLECTION = "settings";
+const SETTINGS_DOC_ID = "site";
+
+export async function addHeroPhotoAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdminSession();
+
+  const file = formData.get("heroPhotoFile");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Selecione uma imagem." };
+  }
+
+  let url: string;
+  try {
+    const result = await saveImageUpload(file);
+    url = result.url;
+  } catch (err) {
+    if (err instanceof UploadValidationError) return { error: err.message };
+    return { error: "Falha ao processar a imagem." };
+  }
+
+  // `arrayUnion`/raw doc (sem o conversor): evita ler-modificar-escrever e
+  // funciona mesmo se o documento ainda não existir.
+  await db()
+    .collection(SETTINGS_COLLECTION)
+    .doc(SETTINGS_DOC_ID)
+    .set({ heroPosterUrls: FieldValue.arrayUnion(url), updatedAt: new Date() }, { merge: true });
+
+  revalidatePath("/");
+  revalidatePath("/admin/configuracoes");
+  return { success: true };
+}
+
+export async function removeHeroPhotoAction(url: string): Promise<void> {
+  await requireAdminSession();
+
+  await db()
+    .collection(SETTINGS_COLLECTION)
+    .doc(SETTINGS_DOC_ID)
+    .update({ heroPosterUrls: FieldValue.arrayRemove(url), updatedAt: new Date() });
+
+  revalidatePath("/");
+  revalidatePath("/admin/configuracoes");
 }

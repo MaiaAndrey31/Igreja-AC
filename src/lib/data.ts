@@ -1,16 +1,28 @@
 import "server-only";
+import { cache } from "react";
 import {
   announcementsCollection,
   cellsCollection,
   galleryCollection,
+  leadersCollection,
+  messagesCollection,
   ministriesCollection,
+  servicesCollection,
   siteSettingsDoc,
+  socialLinksCollection,
+  unitInfoDoc,
   SITE_SETTINGS_DEFAULTS,
+  UNIT_INFO_DEFAULTS,
   type Announcement,
   type Cell,
   type GalleryImage,
+  type Leader,
+  type Message,
   type Ministry,
+  type Service,
   type SiteSettings,
+  type SocialLink,
+  type UnitInfo,
 } from "@/lib/firebase/collections";
 
 /**
@@ -73,3 +85,47 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   await ref.set(initial);
   return initial;
 }
+
+export function getPublishedLeaders(): Promise<Leader[]> {
+  return leadersCollection()
+    .where("active", "==", true)
+    .orderBy("order", "asc")
+    .get()
+    .then((snap) => snap.docs.map((doc) => doc.data()));
+}
+
+export function getPublishedMessages(limit?: number): Promise<Message[]> {
+  let query = messagesCollection().where("published", "==", true).orderBy("date", "desc");
+  if (limit) query = query.limit(limit);
+  return query.get().then((snap) => snap.docs.map((doc) => doc.data()));
+}
+
+export function getSocialLinks(): Promise<SocialLink[]> {
+  return socialLinksCollection()
+    .orderBy("order", "asc")
+    .get()
+    .then((snap) => snap.docs.map((doc) => doc.data()));
+}
+
+export function getServices(): Promise<Service[]> {
+  return servicesCollection()
+    .orderBy("weekday", "asc")
+    .orderBy("order", "asc")
+    .get()
+    .then((snap) => snap.docs.map((doc) => doc.data()));
+}
+
+/**
+ * `cache()` faz o dedupe por requisição: o layout público, a home e páginas
+ * como `/sobre` chamam `getUnitInfo()` de forma independente, mas dentro do
+ * mesmo request React só executa a leitura no Firestore uma vez.
+ */
+export const getUnitInfo = cache(async (): Promise<UnitInfo> => {
+  const ref = unitInfoDoc();
+  const snap = await ref.get();
+  if (snap.exists) return snap.data()!;
+
+  const initial = { ...UNIT_INFO_DEFAULTS, updatedAt: new Date() };
+  await ref.set(initial);
+  return initial;
+});

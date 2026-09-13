@@ -12,21 +12,59 @@ import {
   KeyRound,
   LogOut,
   ExternalLink,
+  UserRound,
+  PlayCircle,
+  Share2,
+  Clock,
+  Building2,
+  Inbox,
 } from "lucide-react";
 import { logoutAction } from "@/actions/auth";
 import { cn } from "@/lib/utils";
 
-const NAV_ITEMS = [
-  { href: "/admin", label: "Painel", icon: LayoutDashboard },
-  { href: "/admin/ministerios", label: "Ministérios", icon: Sparkles },
-  { href: "/admin/celulas", label: "Células", icon: Users },
-  { href: "/admin/avisos", label: "Avisos", icon: Megaphone },
-  { href: "/admin/galeria", label: "Galeria", icon: Images },
-  { href: "/admin/configuracoes", label: "Configurações", icon: Settings },
-  { href: "/admin/senha", label: "Senha", icon: KeyRound },
+const NAV_GROUPS = [
+  {
+    items: [{ href: "/admin", label: "Painel", icon: LayoutDashboard }],
+  },
+  {
+    label: "Conteúdo",
+    items: [
+      { href: "/admin/ministerios", label: "Ministérios", icon: Sparkles },
+      { href: "/admin/celulas", label: "Células", icon: Users },
+      { href: "/admin/avisos", label: "Avisos", icon: Megaphone },
+      { href: "/admin/galeria", label: "Galeria", icon: Images },
+      { href: "/admin/lideranca", label: "Liderança", icon: UserRound },
+      { href: "/admin/mensagens", label: "Mensagens", icon: PlayCircle },
+    ],
+  },
+  {
+    label: "Unidade",
+    items: [
+      { href: "/admin/unidade", label: "Dados da unidade", icon: Building2 },
+      { href: "/admin/horarios", label: "Horários", icon: Clock },
+      { href: "/admin/redes-sociais", label: "Redes sociais", icon: Share2 },
+    ],
+  },
+  {
+    label: "Contato",
+    items: [{ href: "/admin/contatos", label: "Contatos", icon: Inbox }],
+  },
+  {
+    label: "Conta",
+    items: [
+      { href: "/admin/configuracoes", label: "Configurações", icon: Settings },
+      { href: "/admin/senha", label: "Senha", icon: KeyRound },
+    ],
+  },
 ];
 
-export function AdminSidebar({ adminEmail }: { adminEmail: string }) {
+export function AdminSidebar({
+  adminEmail,
+  unreadSubmissions = 0,
+}: {
+  adminEmail: string;
+  unreadSubmissions?: number;
+}) {
   const pathname = usePathname();
 
   return (
@@ -38,24 +76,42 @@ export function AdminSidebar({ adminEmail }: { adminEmail: string }) {
         <p className="mt-1 truncate text-xs text-foreground-subtle">{adminEmail}</p>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 overflow-x-auto px-3 pb-4 lg:overflow-visible">
-        {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href;
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
-                active ? "bg-accent/15 text-accent" : "text-foreground-muted hover:bg-surface-2 hover:text-foreground"
-              )}
-            >
-              <Icon size={16} />
-              {item.label}
-            </Link>
-          );
-        })}
+      <nav className="flex flex-1 flex-col gap-4 overflow-x-auto px-3 pb-4 lg:overflow-visible">
+        {NAV_GROUPS.map((group, groupIndex) => (
+          <div key={group.label ?? groupIndex} className="flex flex-col gap-1">
+            {group.label && (
+              <p className="px-3 pb-1 text-[10px] uppercase tracking-[0.18em] text-foreground-subtle">
+                {group.label}
+              </p>
+            )}
+            {group.items.map((item) => {
+              const active = pathname === item.href;
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
+                    active
+                      ? "bg-accent/15 text-accent"
+                      : "text-foreground-muted hover:bg-surface-2 hover:text-foreground"
+                  )}
+                >
+                  <span className="flex items-center gap-3">
+                    <Icon size={16} />
+                    {item.label}
+                  </span>
+                  {item.href === "/admin/contatos" && unreadSubmissions > 0 && (
+                    <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-contrast">
+                      {unreadSubmissions}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       <div className="flex flex-col gap-1 border-t border-border-subtle px-3 py-4">

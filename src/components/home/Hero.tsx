@@ -2,26 +2,47 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, MapPin } from "lucide-react";
 import { HeroVideo } from "@/components/home/HeroVideo";
-import { mapsUrl, unit } from "@/data/unit";
+import { HeroYoutubeBackground } from "@/components/home/HeroYoutubeBackground";
+import { HeroPhotoCarousel } from "@/components/home/HeroPhotoCarousel";
+import { mapsUrl } from "@/lib/site";
 import { hasRealMedia } from "@/lib/heroCopy";
+import type { UnitInfo } from "@/lib/firebase/collections";
 
 interface HeroProps {
+  unit: UnitInfo;
   title: string;
   subtitle: string;
   mediaType: "video" | "image";
+  videoSource: "upload" | "youtube";
   videoUrl: string;
-  posterUrl: string;
+  youtubeId: string;
+  posterUrls: string[];
   focusY: number;
 }
 
-export function Hero({ title, subtitle, mediaType, videoUrl, posterUrl, focusY }: HeroProps) {
-  const showVideo = mediaType === "video" && hasRealMedia(videoUrl);
-  const showPoster = mediaType === "image" && hasRealMedia(posterUrl);
+export function Hero({
+  unit,
+  title,
+  subtitle,
+  mediaType,
+  videoSource,
+  videoUrl,
+  youtubeId,
+  posterUrls,
+  focusY,
+}: HeroProps) {
+  const showYoutube = mediaType === "video" && videoSource === "youtube" && Boolean(youtubeId);
+  const showUploadedVideo = mediaType === "video" && videoSource === "upload" && hasRealMedia(videoUrl);
+  const showPhotos = mediaType === "image" && posterUrls.length > 0;
   // Enquanto a igreja não sobe vídeo/foto pelo painel, o fallback já é uma
   // foto real de culto (enviada pela própria igreja) — nunca banco de
   // imagens. É o elemento de LCP quando nada foi configurado, por isso
   // carrega com `priority`.
-  const showFallbackPhoto = !showVideo && !showPoster;
+  const showFallbackPhoto = !showYoutube && !showUploadedVideo && !showPhotos;
+  // A primeira foto do carrossel também serve de poster (frame de espera
+  // enquanto o vídeo enviado carrega) — não existe mais um campo de foto
+  // única separado para isso.
+  const videoPosterUrl = posterUrls[0] ?? "";
 
   return (
     <section className="relative flex min-h-[640px] w-full items-end overflow-hidden bg-ink" style={{ height: "100svh" }}>
@@ -45,18 +66,9 @@ export function Hero({ title, subtitle, mediaType, videoUrl, posterUrl, focusY }
           style={{ objectPosition: "50% 30%" }}
         />
       )}
-      {showPoster && (
-        <Image
-          src={posterUrl}
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-          style={{ objectPosition: `50% ${focusY}%` }}
-        />
-      )}
-      {showVideo && <HeroVideo src={videoUrl} poster={posterUrl} focusY={focusY} />}
+      {showPhotos && <HeroPhotoCarousel photoUrls={posterUrls} focusY={focusY} />}
+      {showUploadedVideo && <HeroVideo src={videoUrl} poster={videoPosterUrl} focusY={focusY} />}
+      {showYoutube && <HeroYoutubeBackground youtubeId={youtubeId} focusY={focusY} />}
 
       <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/55 to-ink/25" />
 
@@ -78,7 +90,7 @@ export function Hero({ title, subtitle, mediaType, videoUrl, posterUrl, focusY }
             <ArrowRight size={15} />
           </Link>
           <a
-            href={mapsUrl}
+            href={mapsUrl(unit.address)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 border border-paper/30 px-7 py-4 text-[11px] font-medium uppercase tracking-[0.18em] text-paper transition-colors hover:border-paper hover:bg-paper/10"

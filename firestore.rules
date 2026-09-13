@@ -65,9 +65,46 @@ service cloud.firestore {
     //   allow write: if isAdmin();
     // }
     //
+    // match /settings/unit {
+    //   allow read: if true;
+    //   allow write: if isAdmin();
+    // }
+    //
+    // match /leaders/{id} {
+    //   allow read: if resource.data.active == true;
+    //   allow write: if isAdmin();
+    // }
+    //
+    // match /messages/{id} {
+    //   allow read: if resource.data.published == true;
+    //   allow write: if isAdmin();
+    // }
+    //
+    // match /socialLinks/{id} {
+    //   allow read: if true;
+    //   allow write: if isAdmin();
+    // }
+    //
+    // match /services/{id} {
+    //   allow read: if true;
+    //   allow write: if isAdmin();
+    // }
+    //
+    // // Envios públicos (célula/decisão/testemunho/oração): qualquer um pode
+    // // criar, ninguém além do admin lê ou muda status — a leitura da caixa
+    // // de entrada é só para o painel.
+    // match /formSubmissions/{id} {
+    //   allow create: if true;
+    //   allow read, update, delete: if isAdmin();
+    // }
+    //
     // // Nunca legível/gravável por cliente, mesmo no modo "crescimento
-    // // futuro" — é o contador de tentativas de login (força bruta).
+    // // futuro" — são contadores internos de força bruta (adminSecurity) e de
+    // // limite de envios do formulário público (formRateLimit).
     // match /adminSecurity/{email} {
+    //   allow read, write: if false;
+    // }
+    // match /formRateLimit/{key} {
     //   allow read, write: if false;
     // }
   }

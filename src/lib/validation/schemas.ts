@@ -71,9 +71,10 @@ export const galleryImageSchema = z.object({
 
 export const siteSettingsSchema = z.object({
   heroMediaType: z.enum(["video", "image"]).default("video"),
+  heroVideoSource: z.enum(["upload", "youtube"]).default("upload"),
   heroFocusY: z.coerce.number().int().min(0).max(100).default(35),
   heroVideoUrl: z.string().trim().min(1).max(500),
-  heroPosterUrl: z.string().trim().min(1).max(500),
+  heroYoutubeId: z.string().trim().max(20),
   heroTitle: z.string().trim().min(4).max(140),
   heroSubtitle: z.string().trim().min(4).max(200),
   donationText: z.string().trim().min(10).max(800),
@@ -87,6 +88,94 @@ export const siteSettingsSchema = z.object({
   bankAgency: emptyOr(z.string().trim().min(1).max(20)),
   bankAccount: emptyOr(z.string().trim().min(1).max(30)),
   bankHolder: emptyOr(z.string().trim().min(2).max(120)),
+});
+
+export const leaderSchema = z.object({
+  name: z.string().trim().min(2, "Informe o nome.").max(80),
+  role: z.string().trim().min(2, "Informe a função.").max(100),
+  quote: z.string().trim().max(300).optional().or(z.literal("")),
+  photoUrl: z.string().trim().max(500).optional().or(z.literal("")),
+  active: z.coerce.boolean().default(true),
+  order: z.coerce.number().int().min(0).default(0),
+});
+
+export const messageSchema = z.object({
+  title: z.string().trim().min(2, "Informe um título.").max(140),
+  speaker: z.string().trim().min(2, "Informe quem pregou.").max(80),
+  date: z.coerce.date({ message: "Informe a data." }),
+  youtubeId: z
+    .string()
+    .trim()
+    .min(1, "Informe o ID do vídeo no YouTube (o que vem depois de ?v=).")
+    .max(20),
+  published: z.coerce.boolean().default(true),
+  order: z.coerce.number().int().min(0).default(0),
+});
+
+export const socialLinkSchema = z.object({
+  platform: z.enum(["instagram", "facebook", "whatsapp", "email", "youtube", "other"]),
+  label: z.string().trim().min(2, "Informe um rótulo.").max(40),
+  handle: z.string().trim().min(1, "Informe como o canal é divulgado.").max(80),
+  href: z.string().trim().min(1, "Informe o link.").max(500),
+  external: z.coerce.boolean().default(true),
+  order: z.coerce.number().int().min(0).default(0),
+});
+
+export const serviceSchema = z.object({
+  weekday: z.coerce.number().int().min(0).max(6),
+  time: z
+    .string()
+    .trim()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use o formato HH:MM (ex.: 20:00)."),
+  label: z.string().trim().max(60).optional().or(z.literal("")),
+  order: z.coerce.number().int().min(0).default(0),
+});
+
+export const unitInfoSchema = z.object({
+  name: z.string().trim().min(2, "Informe o nome da igreja.").max(120),
+  shortName: z.string().trim().min(2).max(80),
+  initials: z.string().trim().min(1).max(6),
+  tagline: z.string().trim().min(2).max(160),
+  verseReference: z.string().trim().min(2).max(60),
+  verseExcerpt: z.string().trim().min(2).max(160),
+  verseReading: z.string().trim().min(2).max(300),
+  modelTitle: z.string().trim().min(2).max(120),
+  modelDescription: z.string().trim().min(2).max(200),
+  isFirstExtension: z.coerce.boolean().default(false),
+  foundedYear: z.coerce.number().int().min(1900).max(2100),
+  foundedDateLabel: z.string().trim().min(2).max(60),
+  foundingMembers: z.coerce.number().int().min(0),
+  originStory: z.string().trim().min(10).max(1200),
+  newTempleYear: z.coerce.number().int().min(1900).max(2100),
+  newTempleStory: z.string().trim().min(10).max(1200),
+  address: z.string().trim().min(4).max(200),
+  city: z.string().trim().min(2).max(80),
+  state: z.string().trim().length(2, "Use a sigla do estado (ex.: SP)."),
+  contactEmail: z.string().trim().email("Informe um e-mail válido."),
+  contactPhoneDisplay: z.string().trim().min(4).max(40),
+  contactPhoneE164: z
+    .string()
+    .trim()
+    .regex(/^\d{10,14}$/, "Use o formato DDI+DDD+número, só dígitos (ex.: 5518988887777)."),
+  cellsCountLabel: z.string().trim().min(1).max(20),
+  networkName: z.string().trim().min(2).max(80),
+  networkSite: z.string().trim().url("Informe uma URL válida.").max(200),
+  networkHeadquartersCity: z.string().trim().min(2).max(80),
+  networkHeadquartersState: z.string().trim().length(2, "Use a sigla do estado (ex.: SP)."),
+  networkFoundedYear: z.coerce.number().int().min(1500).max(2100),
+});
+
+/**
+ * Formulário público (célula/decisão/testemunho/oração) — sem sessão admin,
+ * então validado com o mesmo rigor de qualquer entrada não confiável.
+ * `honeypot` precisa chegar vazio: só um bot preenche um campo escondido.
+ */
+export const formSubmissionSchema = z.object({
+  type: z.enum(["celula", "decisao", "testemunho", "oracao"]),
+  name: z.string().trim().min(2, "Informe seu nome.").max(80),
+  contact: z.string().trim().min(8, "Informe um telefone ou e-mail para contato.").max(120),
+  message: z.string().trim().max(600).optional().or(z.literal("")),
+  honeypot: z.string().max(0, "Falha na validação.").optional().or(z.literal("")),
 });
 
 export const loginSchema = z.object({

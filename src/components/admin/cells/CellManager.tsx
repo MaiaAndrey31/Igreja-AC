@@ -29,6 +29,15 @@ const emptyState: ActionState = {};
 export function CellManager({ items }: { items: CellItem[] }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<CellItem | null>(null);
+  // Muda a cada abertura — vira `key` do modal, forçando o React a remontá-lo
+  // (e reinicializar o `useState` do form) em vez de reidratar via effect.
+  const [modalInstance, setModalInstance] = useState(0);
+
+  function openModal(item: CellItem | null) {
+    setEditing(item);
+    setModalInstance((n) => n + 1);
+    setModalOpen(true);
+  }
 
   return (
     <div>
@@ -36,10 +45,7 @@ export function CellManager({ items }: { items: CellItem[] }) {
         title="Células"
         description="Grupos exibidos na página pública de Células."
         actionLabel="Nova célula"
-        onAction={() => {
-          setEditing(null);
-          setModalOpen(true);
-        }}
+        onAction={() => openModal(null)}
       />
 
       <div className="mt-8 overflow-x-auto rounded-xl border border-border-subtle">
@@ -70,10 +76,7 @@ export function CellManager({ items }: { items: CellItem[] }) {
                   <div className="flex items-center justify-end gap-1">
                     <button
                       type="button"
-                      onClick={() => {
-                        setEditing(item);
-                        setModalOpen(true);
-                      }}
+                      onClick={() => openModal(item)}
                       className="rounded-lg px-3 py-1.5 text-xs text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground"
                     >
                       Editar
@@ -94,7 +97,7 @@ export function CellManager({ items }: { items: CellItem[] }) {
         </table>
       </div>
 
-      <CellModal open={modalOpen} onClose={() => setModalOpen(false)} editing={editing} />
+      <CellModal key={modalInstance} open={modalOpen} onClose={() => setModalOpen(false)} editing={editing} />
     </div>
   );
 }
@@ -127,15 +130,10 @@ function CellModal({ open, onClose, editing }: { open: boolean; onClose: () => v
   const action = editing ? updateCellAction.bind(null, editing.id) : createCellAction;
   const [state, formAction] = useActionState(action, emptyState);
   const { push } = useToast();
+  // `CellManager` remonta este componente (via `key`) a cada abertura, então
+  // o valor inicial abaixo já nasce correto — não precisa de um effect para
+  // "reidratar": remontar com um estado inicial novo é o próprio reset.
   const [values, setValues] = useState<CellFormValues>(() => toCellFormValues(editing));
-
-  // Reidrata ao abrir — evita mostrar dados de uma edição anterior (o Modal
-  // fica montado, só é escondido) e evita que o reset automático do <form
-  // action> após um submit com erro apague o que o usuário digitou (inclusive Ordem).
-  useEffect(() => {
-    if (open) setValues(toCellFormValues(editing));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, editing]);
 
   useEffect(() => {
     if (state.success) {

@@ -2,9 +2,10 @@
 
 import { useSyncExternalStore } from "react";
 import { MapPin } from "lucide-react";
-import { mapsUrl, unit, WEEKDAY_LABELS } from "@/data/unit";
-import { groupServicesByWeekday, relativeDayLabel, upcomingServices } from "@/lib/services";
+import { mapsUrl } from "@/lib/site";
+import { WEEKDAY_LABELS, groupServicesByWeekday, relativeDayLabel, upcomingServices } from "@/lib/services";
 import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
+import type { Service, UnitInfo } from "@/lib/firebase/collections";
 
 /**
  * "Próxima celebração", calculada a partir dos horários reais da unidade.
@@ -31,17 +32,19 @@ function subscribeToMinute(onChange: () => void) {
 const currentMinute = () => Math.floor(Date.now() / MINUTE);
 const noClockOnServer = () => null;
 
-export function NextService() {
+export function NextService({ unit, services }: { unit: UnitInfo; services: Service[] }) {
   const minute = useSyncExternalStore(subscribeToMinute, currentMinute, noClockOnServer);
   const now = minute === null ? null : new Date(minute * MINUTE);
 
-  const next = now ? upcomingServices(unit.services, now, 1)[0] : null;
-  const week = groupServicesByWeekday(unit.services);
+  const next = now ? upcomingServices(services, now, 1)[0] : null;
+  const week = groupServicesByWeekday(services);
 
   return (
     <section className="bg-background">
       <div className="mx-auto max-w-7xl px-5 py-24 sm:px-8 sm:py-32">
-        <SectionEyebrow index={2}>Próxima celebração</SectionEyebrow>
+        <SectionEyebrow index={2} verseReference={unit.verseReference}>
+          Próxima celebração
+        </SectionEyebrow>
 
         <div className="mt-12 grid gap-12 lg:grid-cols-12">
           <div className="lg:col-span-7">
@@ -65,7 +68,7 @@ export function NextService() {
 
             <p className="font-display mt-4 text-2xl uppercase text-foreground">{unit.name}</p>
             <a
-              href={mapsUrl}
+              href={mapsUrl(unit.address)}
               target="_blank"
               rel="noopener noreferrer"
               className="font-data mt-3 flex items-start gap-2 text-sm leading-relaxed text-foreground-subtle transition-colors hover:text-accent"

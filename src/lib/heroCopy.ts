@@ -2,33 +2,22 @@
  * Ponte entre o Hero editável pelo /admin e a identidade Amor e Cuidado
  * Adamantina.
  *
- * O texto e a mídia do Hero vivem em `SiteSettings`, editáveis pela igreja.
- * Mas um banco já semeado com valores de uma marca/escopo anterior (rede
- * nacional, ou a igreja que usava este projeto antes) continuaria servindo
- * aquele texto — então os defaults conhecidos são tratados como "ainda não
- * preenchido" e caem para a copy oficial de Adamantina.
- *
- * Quando a igreja salvar o próprio texto em /admin/configuracoes, ele passa a
- * ter precedência normalmente.
+ * O texto e a mídia do Hero vivem em `SiteSettings`, editáveis pela igreja em
+ * /admin/configuracoes. Só o campo estar vazio cai para a copy padrão — uma
+ * vez que a igreja salva algo pelo painel, o valor é sempre respeitado, ainda
+ * que coincida textualmente com uma copy antiga de outro escopo do projeto
+ * (não dá pra "banir" um texto específico sem impedir a igreja de escolher
+ * esse mesmo texto de propósito).
  */
 
 export const HERO_DEFAULT_TITLE = "Amor e Cuidado em Adamantina";
 export const HERO_DEFAULT_SUBTITLE = "Uma igreja pastoreada por células, em Adamantina e região.";
 
-/** Valores que nunca devem aparecer no site — placeholders e escopos anteriores. */
-const LEGACY_VALUES = new Set([
-  "Uma comunidade remida para viver e anunciar o evangelho",
-  "Cultos, células e ministérios em Balneário Camboriú",
-  "Amor e Cuidado",
-  "Aqui, você é cuidado — e enviado para cuidar.",
-]);
-
 const PLACEHOLDER_MEDIA = new Set(["/videos/hero-placeholder.mp4", "/videos/hero-poster.jpg"]);
 
 function resolve(value: string | null | undefined, fallback: string) {
   const trimmed = value?.trim();
-  if (!trimmed || LEGACY_VALUES.has(trimmed)) return fallback;
-  return trimmed;
+  return trimmed || fallback;
 }
 
 export function heroTitle(value: string | null | undefined) {

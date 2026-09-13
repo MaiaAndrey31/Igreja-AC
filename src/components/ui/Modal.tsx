@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -12,8 +13,33 @@ interface ModalProps {
   maxWidthClassName?: string;
 }
 
+// Nunca muda depois do mount, então não precisa de um `subscribe` de verdade
+// — só existe pra dar à API de useSyncExternalStore os dois retratos que ela
+// espera (servidor vs. cliente). Mesmo truque de "isto já rodou no
+// navegador?" usado em NextService.tsx.
+const noopSubscribe = () => () => {};
+
+/**
+ * Renderiza via portal em `document.body`, não na posição onde o componente
+ * é chamado. Um `<dialog>` já é exibido na "top layer" do navegador
+ * independente de onde está no DOM, então isso não muda nada visualmente —
+ * mas evita este `<form>` (o de dentro do Modal) acabar aninhado dentro de
+ * outro `<form>` quando o Modal é usado dentro de uma tela que já é, ela
+ * mesma, um formulário grande (ex.: `HeroPhotoManager` dentro de
+ * `SettingsForm`) — HTML não permite `<form>` dentro de `<form>`, e o React
+ * acusa isso como erro de hidratação.
+ *
+ * `mounted` evita o portal no primeiro render do servidor (onde `document`
+ * não existe): `getServerSnapshot` devolve `false` só nesse primeiro render,
+ * `getSnapshot` devolve `true` a partir do primeiro render no navegador.
+ */
 export function Modal({ open, onClose, title, children, maxWidthClassName = "max-w-lg" }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const mounted = useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false
+  );
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -22,7 +48,9 @@ export function Modal({ open, onClose, title, children, maxWidthClassName = "max
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <dialog
       ref={dialogRef}
       onClose={onClose}
@@ -44,6 +72,7 @@ export function Modal({ open, onClose, title, children, maxWidthClassName = "max
         </button>
       </div>
       <div className="max-h-[75vh] overflow-y-auto px-6 py-5">{children}</div>
-    </dialog>
+    </dialog>,
+    document.body
   );
 }

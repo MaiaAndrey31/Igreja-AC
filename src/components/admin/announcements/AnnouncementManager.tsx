@@ -33,6 +33,15 @@ function toDateInputValue(date: Date): string {
 export function AnnouncementManager({ items }: { items: AnnouncementItem[] }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<AnnouncementItem | null>(null);
+  // Muda a cada abertura — vira `key` do modal, forçando o React a remontá-lo
+  // (e reinicializar o `useState` do form) em vez de reidratar via effect.
+  const [modalInstance, setModalInstance] = useState(0);
+
+  function openModal(item: AnnouncementItem | null) {
+    setEditing(item);
+    setModalInstance((n) => n + 1);
+    setModalOpen(true);
+  }
 
   return (
     <div>
@@ -40,10 +49,7 @@ export function AnnouncementManager({ items }: { items: AnnouncementItem[] }) {
         title="Avisos"
         description="Cultos especiais, conferências e comunicados."
         actionLabel="Novo aviso"
-        onAction={() => {
-          setEditing(null);
-          setModalOpen(true);
-        }}
+        onAction={() => openModal(null)}
       />
 
       <div className="mt-8 flex flex-col gap-3">
@@ -63,10 +69,7 @@ export function AnnouncementManager({ items }: { items: AnnouncementItem[] }) {
             )}
             <button
               type="button"
-              onClick={() => {
-                setEditing(item);
-                setModalOpen(true);
-              }}
+              onClick={() => openModal(item)}
               className="shrink-0 rounded-lg px-3 py-1.5 text-xs text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground"
             >
               Editar
@@ -77,7 +80,7 @@ export function AnnouncementManager({ items }: { items: AnnouncementItem[] }) {
         {items.length === 0 && <p className="text-sm text-foreground-subtle">Nenhum aviso cadastrado ainda.</p>}
       </div>
 
-      <AnnouncementModal open={modalOpen} onClose={() => setModalOpen(false)} editing={editing} />
+      <AnnouncementModal key={modalInstance} open={modalOpen} onClose={() => setModalOpen(false)} editing={editing} />
     </div>
   );
 }
@@ -116,15 +119,11 @@ function AnnouncementModal({
   const action = editing ? updateAnnouncementAction.bind(null, editing.id) : createAnnouncementAction;
   const [state, formAction] = useActionState(action, emptyState);
   const { push } = useToast();
+  // `AnnouncementManager` remonta este componente (via `key`) a cada
+  // abertura, então o valor inicial abaixo já nasce correto — não precisa de
+  // um effect para "reidratar": remontar com um estado inicial novo é o
+  // próprio reset.
   const [values, setValues] = useState<AnnouncementFormValues>(() => toFormValues(editing));
-
-  // Reidrata os campos sempre que o modal abre — evita mostrar valores de uma
-  // edição anterior (o Modal fica montado, só é escondido) e evita que o reset
-  // automático do <form action> após um submit com erro apague o que o usuário digitou.
-  useEffect(() => {
-    if (open) setValues(toFormValues(editing));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, editing]);
 
   useEffect(() => {
     if (state.success) {

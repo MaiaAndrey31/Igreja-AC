@@ -2,12 +2,22 @@ import "server-only";
 import {
   announcementsCollection,
   cellsCollection,
+  formSubmissionsCollection,
   galleryCollection,
+  leadersCollection,
+  messagesCollection,
   ministriesCollection,
+  servicesCollection,
+  socialLinksCollection,
   type Announcement,
   type Cell,
+  type FormSubmission,
   type GalleryImage,
+  type Leader,
+  type Message,
   type Ministry,
+  type Service,
+  type SocialLink,
 } from "@/lib/firebase/collections";
 
 /**
@@ -46,19 +56,57 @@ export function getAllGalleryImages(): Promise<GalleryImage[]> {
     .then((snap) => snap.docs.map((doc) => doc.data()));
 }
 
+export function getAllLeaders(): Promise<Leader[]> {
+  return leadersCollection()
+    .orderBy("order", "asc")
+    .get()
+    .then((snap) => snap.docs.map((doc) => doc.data()));
+}
+
+export function getAllMessages(): Promise<Message[]> {
+  return messagesCollection()
+    .orderBy("date", "desc")
+    .get()
+    .then((snap) => snap.docs.map((doc) => doc.data()));
+}
+
+export function getAllSocialLinks(): Promise<SocialLink[]> {
+  return socialLinksCollection()
+    .orderBy("order", "asc")
+    .get()
+    .then((snap) => snap.docs.map((doc) => doc.data()));
+}
+
+export function getAllServices(): Promise<Service[]> {
+  return servicesCollection()
+    .orderBy("weekday", "asc")
+    .orderBy("order", "asc")
+    .get()
+    .then((snap) => snap.docs.map((doc) => doc.data()));
+}
+
+export function getAllFormSubmissions(): Promise<FormSubmission[]> {
+  return formSubmissionsCollection()
+    .orderBy("createdAt", "desc")
+    .get()
+    .then((snap) => snap.docs.map((doc) => doc.data()));
+}
+
 export interface AdminCounts {
   ministries: number;
   cells: number;
   announcements: number;
   gallery: number;
+  unreadSubmissions: number;
 }
 
 export async function getAdminCounts(): Promise<AdminCounts> {
-  const [ministries, cells, announcements, gallery] = await Promise.all([
+  const [ministries, cells, announcements, gallery, unreadSubmissions] = await Promise.all([
     ministriesCollection().count().get(),
     cellsCollection().count().get(),
     announcementsCollection().count().get(),
     galleryCollection().count().get(),
+    formSubmissionsCollection().where("status", "==", "novo").count().get(),
   ]);
 
   return {
@@ -66,5 +114,6 @@ export async function getAdminCounts(): Promise<AdminCounts> {
     cells: cells.data().count,
     announcements: announcements.data().count,
     gallery: gallery.data().count,
+    unreadSubmissions: unreadSubmissions.data().count,
   };
 }

@@ -5,8 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
-import { unit } from "@/data/unit";
 import { cn } from "@/lib/utils";
+import type { UnitInfo } from "@/lib/firebase/collections";
 
 const NAV_LINKS = [
   { href: "/sobre", label: "Nossa história" },
@@ -15,7 +15,7 @@ const NAV_LINKS = [
   { href: "/mensagens", label: "Mensagens" },
 ];
 
-export function Header() {
+export function Header({ unit }: { unit: UnitInfo }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [lastPathname, setLastPathname] = useState<string | null>(null);
@@ -142,9 +142,9 @@ export function Header() {
           </Link>
 
           <p className="font-data mt-8 text-[11px] leading-relaxed text-[#8c8577]">
-            {unit.contact.phoneDisplay}
+            {unit.contactPhoneDisplay}
             <br />
-            {unit.contact.email}
+            {unit.contactEmail}
           </p>
         </nav>
       )}

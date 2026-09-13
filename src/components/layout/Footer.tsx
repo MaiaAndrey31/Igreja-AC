@@ -1,9 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { unit } from "@/data/unit";
-import { socialLinks } from "@/data/socialLinks";
 import { SocialGlyph } from "@/components/ui/SocialGlyph";
 import { Pending } from "@/components/ui/Pending";
+import type { SocialLink, UnitInfo } from "@/lib/firebase/collections";
 
 const INSTITUTIONAL_LINKS = [
   { href: "/sobre", label: "Nossa história" },
@@ -19,7 +18,7 @@ const LEGAL_LINKS = [
   { href: "/direito-de-imagem", label: "Direito de Imagem" },
 ];
 
-export function Footer() {
+export function Footer({ unit, socialLinks }: { unit: UnitInfo; socialLinks: SocialLink[] }) {
   const year = new Date().getFullYear();
 
   return (
@@ -28,7 +27,7 @@ export function Footer() {
           uma faixa de links miúdos. */}
       <div className="mx-auto max-w-7xl px-5 pb-14 pt-20 sm:px-8 sm:pb-16 sm:pt-28">
         <p className="font-data text-[11px] uppercase tracking-[0.2em] text-foreground-subtle">
-          {unit.verse.reference}
+          {unit.verseReference}
         </p>
         <p className="font-display mt-5 max-w-4xl text-4xl uppercase text-paper sm:text-6xl lg:text-7xl">
           {unit.tagline}
@@ -82,7 +81,7 @@ export function Footer() {
                     {...(social.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                     className="inline-flex items-center gap-2.5 text-sm text-foreground-muted transition-colors hover:text-accent"
                   >
-                    <SocialGlyph id={social.id} />
+                    <SocialGlyph id={social.platform} />
                     <span className="font-data text-[13px]">{social.handle}</span>
                   </a>
                 </li>
@@ -93,11 +92,11 @@ export function Footer() {
           <div>
             <p className="text-[11px] uppercase tracking-[0.22em] text-accent">Parte da rede</p>
             <p className="mt-5 text-sm leading-relaxed text-foreground-subtle">
-              Somos a primeira extensão da rede Amor e Cuidado, com sede em {unit.network.headquartersCity}/
-              {unit.network.headquartersState} desde {unit.network.foundedYear}.
+              Somos a primeira extensão da rede Amor e Cuidado, com sede em {unit.networkHeadquartersCity}/
+              {unit.networkHeadquartersState} desde {unit.networkFoundedYear}.
             </p>
             <a
-              href={unit.network.site}
+              href={unit.networkSite}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4 inline-block text-sm text-accent underline decoration-accent/40 underline-offset-4 transition-colors hover:text-foreground"

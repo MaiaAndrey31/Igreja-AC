@@ -2,12 +2,11 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Mail, MapPin, Phone } from "lucide-react";
-import { mapsUrl, unit, WEEKDAY_LABELS } from "@/data/unit";
-import { leaders } from "@/data/leaders";
-import { cellCities } from "@/data/cellCities";
+import { mapsUrl } from "@/lib/site";
+import { WEEKDAY_LABELS, groupServicesByWeekday } from "@/lib/services";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Pending } from "@/components/ui/Pending";
-import { groupServicesByWeekday } from "@/lib/services";
+import { getActiveCells, getPublishedLeaders, getServices, getUnitInfo } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Nossa história",
@@ -18,23 +17,31 @@ export const metadata: Metadata = {
 
 /**
  * Página institucional escrita de forma editorial e curada — nada copiado em
- * bloco de material de terceiros. Cada afirmação sai de src/data/unit.ts, que
- * só guarda fato verificado publicamente.
+ * bloco de material de terceiros. Cada afirmação vem do que a igreja mantém
+ * em /admin/unidade e /admin/lideranca — fato verificado publicamente, nunca
+ * inferido.
  */
-export default function SobrePage() {
-  const week = groupServicesByWeekday(unit.services);
+export default async function SobrePage() {
+  const [unit, leaders, cells, services] = await Promise.all([
+    getUnitInfo(),
+    getPublishedLeaders(),
+    getActiveCells(),
+    getServices(),
+  ]);
+  const week = groupServicesByWeekday(services);
+  const neighborhoods = Array.from(new Set(cells.map((cell) => cell.neighborhood))).sort();
 
   return (
     <div>
       <PageHeader
         eyebrow="Quem somos"
         title={unit.name}
-        description={`Fundada oficialmente em ${unit.foundedDateLabel}, com ${unit.foundingMembers} pessoas. O nome não veio de um estúdio de marca — veio de ${unit.verse.reference}.`}
+        description={`Fundada oficialmente em ${unit.foundedDateLabel}, com ${unit.foundingMembers} pessoas. O nome não veio de um estúdio de marca — veio de ${unit.verseReference}.`}
         meta={
           <>
             Congregação desde {unit.foundedYear} · {unit.city}/{unit.state}
             <br />
-            {unit.cellsCount} células em {cellCities.length} cidades da região
+            {unit.cellsCountLabel} células pelos bairros de {unit.city}
           </>
         }
       />
@@ -43,14 +50,14 @@ export default function SobrePage() {
         {/* Origem do nome */}
         <section className="grid gap-8 border-t border-border-subtle py-14 sm:grid-cols-12 sm:py-20">
           <p className="font-data text-[11px] uppercase tracking-[0.2em] text-accent sm:col-span-3">
-            {unit.verse.reference}
+            {unit.verseReference}
           </p>
           <div className="sm:col-span-8">
             <p className="font-display text-[clamp(2rem,6vw,4rem)] uppercase text-foreground">
-              “{unit.verse.excerpt}”
+              “{unit.verseExcerpt}”
             </p>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-foreground-muted">
-              Foi o que Jesus disse a Pedro. {unit.verse.reading} É nessa ordem que a igreja lê o próprio
+              Foi o que Jesus disse a Pedro. {unit.verseReading} É nessa ordem que a igreja lê o próprio
               nome — e é nessa ordem que ela tenta funcionar.
             </p>
           </div>
@@ -63,7 +70,7 @@ export default function SobrePage() {
           </p>
           <div className="sm:col-span-8">
             <p className="text-lg leading-relaxed text-foreground-muted">{unit.originStory}</p>
-            <p className="mt-5 text-base leading-relaxed text-foreground-subtle">{unit.newTemple.story}</p>
+            <p className="mt-5 text-base leading-relaxed text-foreground-subtle">{unit.newTempleStory}</p>
 
             <div className="relative mt-10 aspect-[16/9] w-full overflow-hidden border border-border-subtle">
               <Image
@@ -84,10 +91,11 @@ export default function SobrePage() {
             Como funciona
           </p>
           <div className="sm:col-span-8">
-            <h2 className="font-display text-4xl uppercase text-foreground sm:text-5xl">{unit.model.title}</h2>
+            <h2 className="font-display text-4xl uppercase text-foreground sm:text-5xl">{unit.modelTitle}</h2>
             <p className="mt-5 text-base leading-relaxed text-foreground-muted">
-              {unit.model.description} O domingo reúne; a semana é onde a igreja acontece, em{" "}
-              {cellCities.length} cidades da região.{" "}
+              {unit.modelDescription} O domingo reúne; a semana é onde a igreja acontece, pelos bairros de{" "}
+              {unit.city}
+              {neighborhoods.length > 0 ? ` (${neighborhoods.length} hoje cadastrados)` : ""}.{" "}
               <Link href="/celulas" className="underline decoration-accent/50 underline-offset-4 hover:text-accent">
                 Veja as células
               </Link>
@@ -99,10 +107,10 @@ export default function SobrePage() {
             </p>
             <p className="mt-4 max-w-xl text-base leading-relaxed text-foreground-muted">
               Somos a primeira extensão da rede nacional Amor e Cuidado, cuja sede fica em{" "}
-              {unit.network.headquartersCity}/{unit.network.headquartersState}, desde {unit.network.foundedYear}.
+              {unit.networkHeadquartersCity}/{unit.networkHeadquartersState}, desde {unit.networkFoundedYear}.
               Abrimos caminho para as unidades que vieram depois de nós.{" "}
               <a
-                href={unit.network.site}
+                href={unit.networkSite}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline decoration-accent/50 underline-offset-4 hover:text-accent"
@@ -121,7 +129,7 @@ export default function SobrePage() {
           </p>
           <ul className="sm:col-span-8">
             {leaders.map((leader) => (
-              <li key={leader.slug} className="border-b border-border-subtle pb-6 last:border-0 [&+li]:pt-6">
+              <li key={leader.id} className="border-b border-border-subtle pb-6 last:border-0 [&+li]:pt-6">
                 <p className="font-data text-[11px] uppercase tracking-[0.16em] text-accent">{leader.role}</p>
                 <p className="font-display mt-2 text-3xl uppercase text-foreground sm:text-4xl">
                   {leader.name}
@@ -189,18 +197,18 @@ export default function SobrePage() {
                 <MapPin size={15} className="mt-0.5 shrink-0 text-foreground-subtle" />
                 {unit.address}
               </span>
-              <a href={`tel:+${unit.contact.phoneE164}`} className="flex items-center gap-2 hover:text-accent">
+              <a href={`tel:+${unit.contactPhoneE164}`} className="flex items-center gap-2 hover:text-accent">
                 <Phone size={15} className="shrink-0 text-foreground-subtle" />
-                {unit.contact.phoneDisplay}
+                {unit.contactPhoneDisplay}
               </a>
-              <a href={`mailto:${unit.contact.email}`} className="flex items-center gap-2 hover:text-accent">
+              <a href={`mailto:${unit.contactEmail}`} className="flex items-center gap-2 hover:text-accent">
                 <Mail size={15} className="shrink-0 text-foreground-subtle" />
-                {unit.contact.email}
+                {unit.contactEmail}
               </a>
             </address>
 
             <a
-              href={mapsUrl}
+              href={mapsUrl(unit.address)}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-6 inline-flex items-center gap-2 border-b border-accent pb-1 text-[11px] uppercase tracking-[0.16em] text-accent transition-colors hover:border-foreground hover:text-foreground"

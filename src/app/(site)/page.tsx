@@ -11,7 +11,16 @@ import { ContributeTeaser } from "@/components/home/ContributeTeaser";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { churchSchema } from "@/lib/schema";
 import { heroSubtitle, heroTitle } from "@/lib/heroCopy";
-import { getPublishedMinistries, getSiteSettings } from "@/lib/data";
+import {
+  getActiveCells,
+  getPublishedLeaders,
+  getPublishedMessages,
+  getPublishedMinistries,
+  getServices,
+  getSiteSettings,
+  getSocialLinks,
+  getUnitInfo,
+} from "@/lib/data";
 
 // Hero e ministérios são editados pelo painel admin e precisam aparecer em
 // tempo real pros visitantes, sem depender de cache de build.
@@ -29,29 +38,43 @@ export const dynamic = "force-dynamic";
  * tokens semânticos para dentro dela.
  */
 export default async function Home() {
-  const [settings, ministries] = await Promise.all([getSiteSettings(), getPublishedMinistries()]);
+  const [settings, ministries, unit, services, cells, leaders, messages, socialLinks] = await Promise.all([
+    getSiteSettings(),
+    getPublishedMinistries(),
+    getUnitInfo(),
+    getServices(),
+    getActiveCells(),
+    getPublishedLeaders(),
+    getPublishedMessages(6),
+    getSocialLinks(),
+  ]);
+
+  const instagramHref = socialLinks.find((social) => social.platform === "instagram")?.href ?? "#";
 
   return (
     <>
-      <JsonLd data={churchSchema()} />
+      <JsonLd data={churchSchema(unit, socialLinks, services)} />
 
       <Hero
+        unit={unit}
         title={heroTitle(settings.heroTitle)}
         subtitle={heroSubtitle(settings.heroSubtitle)}
         mediaType={settings.heroMediaType === "image" ? "image" : "video"}
+        videoSource={settings.heroVideoSource === "youtube" ? "youtube" : "upload"}
         videoUrl={settings.heroVideoUrl}
-        posterUrl={settings.heroPosterUrl}
+        youtubeId={settings.heroYoutubeId}
+        posterUrls={settings.heroPosterUrls}
         focusY={settings.heroFocusY}
       />
 
-      <OurStory />
-      <NextService />
-      <CellReach />
-      <Leadership />
-      <LatestMessages />
+      <OurStory unit={unit} />
+      <NextService unit={unit} services={services} />
+      <CellReach unit={unit} cells={cells} />
+      <Leadership leaders={leaders} />
+      <LatestMessages messages={messages} instagramHref={instagramHref} />
       <MinistriesIndex ministries={ministries} />
-      <NetworkFamily />
-      <GetInvolved />
+      <NetworkFamily unit={unit} />
+      <GetInvolved unit={unit} />
       <ContributeTeaser />
     </>
   );

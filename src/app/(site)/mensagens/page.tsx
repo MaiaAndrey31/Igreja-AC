@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { ArrowUpRight, Play } from "lucide-react";
-import { messages, youtubeThumbnail, youtubeWatchUrl } from "@/data/messages";
-import { getSocialLink } from "@/data/socialLinks";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Pending } from "@/components/ui/Pending";
-import { formatMessageDate } from "@/lib/format";
+import { formatFullDate, youtubeThumbnail, youtubeWatchUrl } from "@/lib/format";
+import { getPublishedMessages, getSocialLinks } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Mensagens",
@@ -13,8 +12,9 @@ export const metadata: Metadata = {
   alternates: { canonical: "/mensagens" },
 };
 
-export default function MensagensPage() {
-  const instagram = getSocialLink("instagram");
+export default async function MensagensPage() {
+  const [messages, socialLinks] = await Promise.all([getPublishedMessages(), getSocialLinks()]);
+  const instagramHref = socialLinks.find((social) => social.platform === "instagram")?.href ?? "#";
 
   return (
     <div>
@@ -33,7 +33,7 @@ export default function MensagensPage() {
               Enquanto isso, acompanhe pelo Instagram.
             </p>
             <a
-              href={instagram.href}
+              href={instagramHref}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-8 inline-flex items-center gap-2 bg-accent px-7 py-4 text-[11px] uppercase tracking-[0.18em] text-accent-contrast transition-opacity hover:opacity-85"
@@ -45,7 +45,7 @@ export default function MensagensPage() {
         ) : (
           <ul className="grid gap-12 sm:grid-cols-2 lg:grid-cols-3">
             {messages.map((message) => (
-              <li key={message.slug}>
+              <li key={message.id}>
                 <a
                   href={youtubeWatchUrl(message.youtubeId)}
                   target="_blank"
@@ -69,7 +69,7 @@ export default function MensagensPage() {
                   </div>
 
                   <p className="font-data mt-4 text-[11px] uppercase tracking-[0.16em] text-foreground-subtle">
-                    {formatMessageDate(message.date)} · {message.speaker}
+                    {formatFullDate(message.date)} · {message.speaker}
                   </p>
                   <h2 className="font-display mt-2 text-2xl uppercase text-foreground transition-colors group-hover:text-accent">
                     {message.title}

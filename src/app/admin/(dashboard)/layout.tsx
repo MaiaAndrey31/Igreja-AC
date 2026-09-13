@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/auth/session";
+import { getAdminCounts } from "@/lib/adminData";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 
 export default async function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
@@ -11,9 +12,11 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
   const session = await getCurrentSession();
   if (!session) redirect("/admin/login");
 
+  const { unreadSubmissions } = await getAdminCounts();
+
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      <AdminSidebar adminEmail={session.email} />
+      <AdminSidebar adminEmail={session.email} unreadSubmissions={unreadSubmissions} />
       <main className="flex-1 overflow-x-hidden px-5 py-8 sm:px-10 sm:py-12">{children}</main>
     </div>
   );

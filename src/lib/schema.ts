@@ -1,10 +1,10 @@
-import { unit } from "@/data/unit";
-import { socialLinks } from "@/data/socialLinks";
 import { siteUrl } from "@/lib/site";
+import type { Service, SocialLink, UnitInfo } from "@/lib/firebase/collections";
 
 /**
  * schema.org para os buscadores — uma única unidade, então um único bloco
- * `Church`, com endereço e horários reais.
+ * `Church`, com endereço e horários reais (vindos do Firestore, editáveis em
+ * /admin/unidade e /admin/horarios).
  *
  * Regra do projeto vale aqui também: campo sem dado verificado não é emitido.
  * Um `openingHours` inventado ou um endereço aproximado viraria informação
@@ -21,8 +21,8 @@ const SCHEMA_WEEKDAY = [
   "Saturday",
 ] as const;
 
-export function churchSchema() {
-  const openingHours = unit.services.map((service) => ({
+export function churchSchema(unit: UnitInfo, socialLinks: SocialLink[], services: Service[]) {
+  const openingHours = services.map((service) => ({
     "@type": "OpeningHoursSpecification",
     dayOfWeek: `https://schema.org/${SCHEMA_WEEKDAY[service.weekday]}`,
     opens: service.time,
@@ -39,8 +39,8 @@ export function churchSchema() {
     slogan: unit.tagline,
     foundingDate: String(unit.foundedYear),
     foundingLocation: `${unit.city}, ${unit.state}`,
-    email: unit.contact.email,
-    telephone: `+${unit.contact.phoneE164}`,
+    email: unit.contactEmail,
+    telephone: `+${unit.contactPhoneE164}`,
     address: {
       "@type": "PostalAddress",
       streetAddress: unit.address,

@@ -1,4 +1,8 @@
-import { WEEKDAY_LABELS, type Service, type Weekday } from "@/data/unit";
+// `import type` — este arquivo é importado por componentes client (ver
+// NextService.tsx), e `@/lib/firebase/collections` carrega `server-only`.
+// Um import só de tipo é apagado na compilação, então não puxa esse módulo
+// para o bundle do navegador.
+import type { Service } from "@/lib/firebase/collections";
 
 /**
  * Cálculo da próxima celebração a partir dos horários cadastrados.
@@ -7,6 +11,19 @@ import { WEEKDAY_LABELS, type Service, type Weekday } from "@/data/unit";
  * visitante nem no do servidor: "domingo às 9h" é 9h em Adamantina,
  * independente de quem está olhando ou de onde o Node está rodando.
  */
+
+/** 0 = domingo … 6 = sábado (mesma convenção de `Date#getDay`). */
+export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+export const WEEKDAY_LABELS: Record<Weekday, string> = {
+  0: "Domingo",
+  1: "Segunda-feira",
+  2: "Terça-feira",
+  3: "Quarta-feira",
+  4: "Quinta-feira",
+  5: "Sexta-feira",
+  6: "Sábado",
+};
 
 const CHURCH_TIMEZONE = "America/Sao_Paulo";
 

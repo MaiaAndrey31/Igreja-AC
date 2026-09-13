@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { unit } from "@/data/unit";
+import { getUnitInfo } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Política de Privacidade",
@@ -16,7 +16,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export default function PoliticaDePrivacidadePage() {
+export default async function PoliticaDePrivacidadePage() {
+  const unit = await getUnitInfo();
+
   return (
     <div>
       <PageHeader eyebrow="Jurídico" title="Política de Privacidade" />
@@ -97,10 +99,10 @@ export default function PoliticaDePrivacidadePage() {
           <p>
             Para exercer qualquer um desses direitos, entre em contato pelo e-mail{" "}
             <a
-              href={`mailto:${unit.contact.email}`}
+              href={`mailto:${unit.contactEmail}`}
               className="text-foreground underline decoration-accent/50 underline-offset-2 hover:text-accent"
             >
-              {unit.contact.email}
+              {unit.contactEmail}
             </a>
             .
           </p>

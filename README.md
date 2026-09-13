@@ -60,11 +60,19 @@ administrativo, usando as credenciais definidas em `.env`.
    e publique. (Alternativa, se algum dia configurarem a Firebase CLI:
    `firebase deploy --only firestore:rules,firestore:indexes`, usando o `firebase.json` já incluído.)
 7. Rode `npm run admin:create` para criar o primeiro usuário administrador.
+8. Rode `npm run seed:initial` para migrar para o Firestore os dados que antes viviam hardcoded em
+   `src/data/*.ts` (liderança, mensagens, links sociais, horários) — idempotente, seguro rodar mais de uma
+   vez.
+9. **Publique os índices compostos** — `firebase deploy --only firestore:indexes` (exige `firebase login`
+   antes) ou, mais simples na primeira vez, deixe o Console criar cada um sob demanda: acesse `/`, `/sobre` e
+   `/mensagens` uma vez logo após o seed — se um índice estiver faltando, o Firestore recusa a consulta com um
+   erro que já traz o link direto para criá-lo em um clique (ver `firestore.indexes.json` para a lista
+   completa; 8 índices ao todo, hoje).
 
 Não é preciso ativar o Storage — uploads de mídia ficam em disco local (ver seção "Deploy").
 
 Nenhuma migration é necessária — o Firestore não tem schema, as coleções nascem sozinhas no primeiro
-documento gravado pelo painel.
+documento gravado pelo painel ou pelo `seed:initial`.
 
 ## Scripts
 
@@ -75,6 +83,7 @@ documento gravado pelo painel.
 | `npm run start` | Sobe o build de produção |
 | `npm run lint` | ESLint |
 | `npm run admin:create` | Cria/atualiza o usuário admin no Firebase Auth (lê `ADMIN_EMAIL`/`ADMIN_PASSWORD`) |
+| `npm run seed:initial` | Migra para o Firestore o conteúdo que antes vivia em `src/data/*.ts` (liderança, mensagens, redes sociais, horários) — idempotente |
 
 ## Regra de conteúdo: não inventar informação
 
@@ -88,34 +97,44 @@ mostra `MediaPlaceholder`, nunca banco de imagens.
 
 ## Onde mora cada conteúdo
 
-**`src/data/` — estrutural, versionado em código** (muda raramente, precisa de revisão):
+Praticamente todo o conteúdo editorial e institucional vive no Firestore, gerenciável pelo painel `/admin` —
+os próprios pastores mantêm, sem precisar de dev nem de novo deploy. Só `src/data/pending.ts` (o marcador
+`[CONTEÚDO PENDENTE]`, utilitário de UI) continua em código: não é conteúdo, é comportamento.
 
-| Arquivo | Conteúdo |
-| --- | --- |
-| `unit.ts` | Nome, tagline, João 21:17, história (garagem → templo novo), endereço, contato, horários, contexto de rede |
-| `leaders.ts` | Liderança local confirmada publicamente (Toninho Donha, Lucas Donha, Matheus Magnani) |
-| `cellCities.ts` | As 6 cidades da microrregião alcançadas por células |
-| `messages.ts` | Pregações em destaque (hoje vazio → estado pendente, sem link de vídeo confirmado) |
-| `socialLinks.ts` | Instagram, Facebook, WhatsApp, e-mail (sem YouTube — handle não confirmado) |
+| Coleção/documento | Conteúdo | Onde é editado | Onde aparece |
+| --- | --- | --- | --- |
+| `ministries` | Título, descrição, ícone, destaque, ordem, publicado | `/admin/ministerios` | Home e `/ministerios` |
+| `cells` | Nome, líder, bairro (de Adamantina), endereço, dia/horário, WhatsApp, logo, ativa | `/admin/celulas` | `/celulas`, home (bairros com célula) |
+| `announcements` | Avisos, cultos especiais, conferências | `/admin/avisos` | `/avisos` e home |
+| `gallery` | Fotos | `/admin/galeria` | `/galeria` |
+| `settings/site` | Hero (título, subtítulo, vídeo enviado ou link do YouTube, foto, foco), dados de contribuição | `/admin/configuracoes` | Home e `/contribua` |
+| `leaders` | Liderança local — nome, função, frase, foto, ordem, visível | `/admin/lideranca` | Home e `/sobre` |
+| `messages` | Pregações em destaque — título, pregador, data, ID do YouTube | `/admin/mensagens` | Home e `/mensagens` |
+| `socialLinks` | Instagram, Facebook, WhatsApp, e-mail, YouTube (quando houver) | `/admin/redes-sociais` | Rodapé, home, JSON-LD |
+| `services` | Horários de celebração — dia, hora, rótulo opcional | `/admin/horarios` | Home e `/sobre` |
+| `settings/unit` | Nome, tagline, João 21:17, história (garagem → templo novo), endereço, contato, contexto de rede | `/admin/unidade` | Praticamente todas as páginas (header, rodapé, home, `/sobre`, jurídicas, metadata) |
+| `formSubmissions` | Envios dos formulários públicos (célula, decisão, testemunho, oração) | — (só leitura/gestão) | `/admin/contatos` |
+| `adminSecurity/{email}` | Contador de tentativas de login (força bruta) | — | Só uso interno |
+| `formRateLimit/{ip:tipo}` | Limite de envios do formulário público por IP | — | Só uso interno |
 
-**Firestore, via painel `/admin` — editorial, os próprios pastores mantêm** (publica sem precisar de dev):
+`settings/site` e `settings/unit` nascem sozinhos, com valores padrão, na primeira leitura — igual ao que já
+acontecia com `settings/site` antes desta migração. As demais coleções acima (exceto `formSubmissions` e os
+contadores internos) são semeadas uma vez por `npm run seed:initial`, a partir do conteúdo que vivia em
+`src/data/*.ts` antes desta migração — ver a seção "Rodando localmente".
 
-| Coleção/documento | Conteúdo | Onde aparece |
-| --- | --- | --- |
-| `ministries` | Título, descrição, ícone, destaque, ordem, publicado | Home e `/ministerios` |
-| `cells` | Nome, líder, bairro, dia/horário, WhatsApp, logo, ativa | `/celulas` |
-| `announcements` | Avisos, cultos especiais, conferências | `/avisos` e home |
-| `gallery` | Fotos | `/galeria` |
-| `settings/site` | Hero (título, subtítulo, vídeo/foto, foco), dados de contribuição | Home e `/contribua` |
-| `adminSecurity/{email}` | Contador de tentativas de login (força bruta) | Só uso interno |
+O rodapé e o header leem `settings/unit`/`socialLinks` a cada requisição, via `(site)/layout.tsx` — por isso
+**todo o site público hoje renderiza dinamicamente** (`force-dynamic` no layout, herdado por todas as páginas
+dele), não mais parcialmente estático. É a troca esperada ao tornar praticamente todo o conteúdo editável: uma
+edição em `/admin/unidade` aparece imediatamente em qualquer página, sem rebuild.
 
-O rodapé aponta para `/ministerios` com um link fixo, em vez de listar cada ministério: o rodapé é
-compartilhado por todas as páginas, e uma consulta ao Firestore ali tiraria a geração estática das páginas
-que não precisam disso.
+> **Nota sobre os números:** `cellsCountLabel` (editável em `/admin/unidade`) está como `"70+"` (o número da
+> página oficial da unidade, mais conservador). Uma matéria local de início de 2026 chegou a citar 102
+> células — sinalize essa divergência à igreja, caso prefiram atualizar.
 
-> **Nota sobre os números:** `unit.cellsCount` está como `"70+"` (o número da página oficial da unidade,
-> mais conservador). Uma matéria local de início de 2026 chegou a citar 102 células — sinalize essa
-> divergência à igreja antes de publicar, caso prefiram atualizar.
+> **Alcance das células:** a unidade atua só em Adamantina — não numa microrregião de várias cidades (um
+> `cellCities` chegou a existir aqui, listando 6 cidades da região, mas foi removido por não refletir a
+> realidade da unidade). A home mostra os bairros de Adamantina com célula cadastrada, derivados
+> diretamente do campo `neighborhood` de `cells` — não uma lista separada.
 
 ## Sistema de design
 
@@ -153,10 +172,11 @@ Todos enviados diretamente pela igreja — nenhum é banco de imagens.
 
 ## Índices do Firestore
 
-Toda consulta com filtro (`where`) combinado a mais de um `orderBy` exige um índice composto no Firestore —
-os 5 que este projeto usa estão declarados em `firestore.indexes.json`. Se algum faltar em produção, a
-consulta falha com uma mensagem de erro que já traz o link direto para criar o índice certo no Console —
-não é preciso decorar isso, só clicar no link na primeira vez que acontecer.
+Toda consulta que combina um filtro (`where`) com `orderBy`, ou que usa mais de um `orderBy`, exige um índice
+composto no Firestore — os 8 que este projeto usa estão declarados em `firestore.indexes.json`. Se algum
+faltar em produção, a consulta falha com uma mensagem de erro que já traz o link direto para criar o índice
+certo no Console — não é preciso decorar isso, só clicar no link na primeira vez que acontecer (ou publicar
+todos de uma vez com `firebase deploy --only firestore:indexes`, após `firebase login`).
 
 ## Deploy
 
@@ -198,3 +218,8 @@ fictício vá ao ar como se fosse real.
   `src/proxy.ts` e `next.config.mjs`.
 - `/contribua` nunca exibe dados financeiros de exemplo: enquanto a igreja não salvar os dados reais em
   `/admin/configuracoes`, a página mostra `[CONTEÚDO PENDENTE]` (ver `src/lib/donation.ts`).
+- Formulário público (`submitFormAction`, em `src/actions/formSubmissions.ts`): sem sessão (é a única Server
+  Action deste projeto que não chama `requireAdminSession`), mas com honeypot (campo oculto que só um bot
+  preenche — envio descartado silenciosamente) e limite de 5 envios/hora por IP+tipo, persistido no Firestore
+  (`formRateLimit/{ip}:{tipo}`) — best-effort: depende do host repassar `x-forwarded-for` corretamente. As
+  submissões (nome, contato, mensagem) só são legíveis por quem está logado, em `/admin/contatos`.

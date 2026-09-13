@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Big_Shoulders, Inter, IBM_Plex_Mono } from "next/font/google";
 import { ToastProvider } from "@/components/ui/Toast";
 import { MotionProvider } from "@/components/providers/MotionProvider";
-import { unit } from "@/data/unit";
+import { getUnitInfo } from "@/lib/data";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -38,28 +38,36 @@ const data = IBM_Plex_Mono({
 const description =
   "Igreja pastoreada por células em Adamantina/SP — a primeira extensão da rede Amor e Cuidado.";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: {
-    default: `${unit.name} — ${unit.tagline}`,
-    template: `%s | ${unit.shortName}`,
-  },
-  description,
-  openGraph: {
-    type: "website",
-    locale: "pt_BR",
-    siteName: unit.name,
-    title: `${unit.name} — ${unit.tagline}`,
+// `getUnitInfo` já é cacheada por requisição (React `cache()`) — chamar aqui
+// não gera uma segunda leitura no Firestore além da que o layout público
+// (`(site)/layout.tsx`) já faz para Header/Footer.
+export async function generateMetadata(): Promise<Metadata> {
+  const unit = await getUnitInfo();
+  const title = `${unit.name} — ${unit.tagline}`;
+
+  return {
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: title,
+      template: `%s | ${unit.shortName}`,
+    },
     description,
-    url: siteUrl,
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${unit.name} — ${unit.tagline}`,
-    description,
-  },
-  alternates: { canonical: "/" },
-};
+    openGraph: {
+      type: "website",
+      locale: "pt_BR",
+      siteName: unit.name,
+      title,
+      description,
+      url: siteUrl,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+    alternates: { canonical: "/" },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#14120F",

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { unit } from "@/data/unit";
+import { getUnitInfo } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Termos de Uso",
@@ -16,7 +16,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export default function TermosDeUsoPage() {
+export default async function TermosDeUsoPage() {
+  const unit = await getUnitInfo();
+
   return (
     <div>
       <PageHeader eyebrow="Jurídico" title="Termos de Uso" />
@@ -82,10 +84,10 @@ export default function TermosDeUsoPage() {
           <p>
             Dúvidas sobre estes termos podem ser enviadas para{" "}
             <a
-              href={`mailto:${unit.contact.email}`}
+              href={`mailto:${unit.contactEmail}`}
               className="text-foreground underline decoration-accent/50 underline-offset-2 hover:text-accent"
             >
-              {unit.contact.email}
+              {unit.contactEmail}
             </a>
             .
           </p>

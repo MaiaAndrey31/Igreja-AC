@@ -1,10 +1,9 @@
 import Image from "next/image";
 import { ArrowUpRight, Play } from "lucide-react";
-import { messages, youtubeThumbnail, youtubeWatchUrl } from "@/data/messages";
-import { getSocialLink } from "@/data/socialLinks";
 import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
 import { Pending } from "@/components/ui/Pending";
-import { formatMessageDate } from "@/lib/format";
+import { formatFullDate, youtubeThumbnail, youtubeWatchUrl } from "@/lib/format";
+import type { Message } from "@/lib/firebase/collections";
 
 /**
  * Últimas mensagens.
@@ -18,9 +17,7 @@ import { formatMessageDate } from "@/lib/format";
  * CSP e em images.remotePatterns) e carregam em lazy — nenhum player é
  * embutido, então a seção não puxa o iframe pesado do YouTube.
  */
-export function LatestMessages() {
-  const instagram = getSocialLink("instagram");
-
+export function LatestMessages({ messages, instagramHref }: { messages: Message[]; instagramHref: string }) {
   return (
     <section className="on-paper">
       <div className="mx-auto max-w-7xl px-5 py-24 sm:px-8 sm:py-32">
@@ -32,7 +29,7 @@ export function LatestMessages() {
           </h2>
 
           <a
-            href={instagram.href}
+            href={instagramHref}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex shrink-0 items-center gap-2 border-b border-accent pb-1 text-[11px] uppercase tracking-[0.18em] text-accent transition-colors hover:border-foreground hover:text-foreground"
@@ -55,7 +52,7 @@ export function LatestMessages() {
         ) : (
           <ul className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
             {messages.map((message) => (
-              <li key={message.slug}>
+              <li key={message.id}>
                 <a
                   href={youtubeWatchUrl(message.youtubeId)}
                   target="_blank"
@@ -79,7 +76,7 @@ export function LatestMessages() {
                   </div>
 
                   <p className="font-data mt-4 text-[11px] uppercase tracking-[0.16em] text-foreground-subtle">
-                    {formatMessageDate(message.date)} · {message.speaker}
+                    {formatFullDate(message.date)} · {message.speaker}
                   </p>
                   <h3 className="font-display mt-2 text-2xl uppercase text-foreground transition-colors group-hover:text-accent">
                     {message.title}

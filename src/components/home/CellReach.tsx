@@ -1,21 +1,26 @@
 import Link from "next/link";
 import { ArrowRight, MessageCircle } from "lucide-react";
-import { cellCities } from "@/data/cellCities";
-import { unit, whatsappUrl } from "@/data/unit";
+import { whatsappUrl } from "@/lib/site";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
+import { ContactFormTrigger } from "@/components/site/ContactFormTrigger";
+import type { Cell, UnitInfo } from "@/lib/firebase/collections";
 
 /**
  * "Encontre uma célula" — modelo declarado da igreja: "tudo acontece através
- * delas". Mostra o alcance real (as 6 cidades da microrregião, fonte: página
- * oficial da unidade) e manda para /celulas, onde a lista de verdade (vinda
- * do painel admin) pode ser filtrada por bairro/cidade.
+ * delas". A unidade atua só em Adamantina (não numa microrregião), então o
+ * alcance mostrado aqui são os bairros com célula cadastrada em
+ * /admin/celulas — não uma lista de cidades.
  */
-export function CellReach() {
+export function CellReach({ unit, cells }: { unit: UnitInfo; cells: Cell[] }) {
+  const neighborhoods = Array.from(new Set(cells.map((cell) => cell.neighborhood))).sort();
+
   return (
     <section className="bg-background">
       <div className="mx-auto max-w-7xl px-5 py-24 sm:px-8 sm:py-32">
-        <SectionEyebrow index={3}>Encontre uma célula</SectionEyebrow>
+        <SectionEyebrow index={3} verseReference={unit.verseReference}>
+          Encontre uma célula
+        </SectionEyebrow>
 
         <div className="mt-12 grid gap-12 lg:grid-cols-12">
           <Reveal className="lg:col-span-7">
@@ -23,21 +28,23 @@ export function CellReach() {
               Igreja também acontece numa sala de estar.
             </h2>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-foreground-muted">
-              A Amor e Cuidado é {unit.model.title.toLowerCase()}. {unit.model.description} Com{" "}
-              {unit.cellsCount} células espalhadas por {cellCities.length} cidades da região, é bem provável
-              que exista uma perto de você.
+              A Amor e Cuidado é {unit.modelTitle.toLowerCase()}. {unit.modelDescription} Com{" "}
+              {unit.cellsCountLabel} células espalhadas pelos bairros de {unit.city}, é bem provável que
+              exista uma perto de você.
             </p>
 
-            <ul className="mt-8 flex flex-wrap gap-2" aria-label="Cidades alcançadas pelas células">
-              {cellCities.map((city) => (
-                <li
-                  key={city}
-                  className="font-data border border-border-soft px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-foreground-muted"
-                >
-                  {city}
-                </li>
-              ))}
-            </ul>
+            {neighborhoods.length > 0 && (
+              <ul className="mt-8 flex flex-wrap gap-2" aria-label="Bairros com célula cadastrada">
+                {neighborhoods.map((neighborhood) => (
+                  <li
+                    key={neighborhood}
+                    className="font-data border border-border-soft px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-foreground-muted"
+                  >
+                    {neighborhood}
+                  </li>
+                ))}
+              </ul>
+            )}
           </Reveal>
 
           <div className="flex flex-col justify-end gap-3 sm:flex-row lg:col-span-4 lg:col-start-9 lg:flex-col">
@@ -48,15 +55,19 @@ export function CellReach() {
               Encontrar uma célula
               <ArrowRight size={14} />
             </Link>
-            <a
-              href={whatsappUrl(`Olá! Vim pelo site da ${unit.shortName} e gostaria de entrar em uma célula.`)}
-              target="_blank"
-              rel="noopener noreferrer"
+            <ContactFormTrigger
+              type="celula"
+              modalTitle="Quero uma célula"
+              modalDescription="Deixe seu contato que alguém te apresenta a célula mais perto de você."
+              whatsappHref={whatsappUrl(
+                unit.contactPhoneE164,
+                `Olá! Vim pelo site da ${unit.shortName} e gostaria de entrar em uma célula.`
+              )}
               className="inline-flex items-center justify-center gap-2 border border-border-soft px-6 py-3.5 text-[11px] uppercase tracking-[0.18em] text-foreground transition-colors hover:border-accent hover:text-accent"
             >
               <MessageCircle size={14} />
-              Falar no WhatsApp
-            </a>
+              Falar com a gente
+            </ContactFormTrigger>
           </div>
         </div>
       </div>

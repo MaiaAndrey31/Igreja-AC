@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CellCard, type CellCardData } from "@/components/celulas/CellCard";
 import { cn } from "@/lib/utils";
 
-export function CellFilterableGrid({ cells }: { cells: CellCardData[] }) {
+export function CellFilterableGrid({ cells, unitName }: { cells: CellCardData[]; unitName: string }) {
   const neighborhoods = useMemo(
     () => Array.from(new Set(cells.map((cell) => cell.neighborhood))).sort(),
     [cells]
@@ -83,7 +83,7 @@ export function CellFilterableGrid({ cells }: { cells: CellCardData[] }) {
         >
           {filtered.map((cell) => (
             <div key={cell.id} className="snap-start">
-              <CellCard cell={cell} />
+              <CellCard cell={cell} unitName={unitName} />
             </div>
           ))}
         </div>

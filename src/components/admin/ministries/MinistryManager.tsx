@@ -28,6 +28,18 @@ const emptyState: ActionState = {};
 export function MinistryManager({ items }: { items: MinistryItem[] }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<MinistryItem | null>(null);
+  // Muda a cada abertura — vira `key` do modal, forçando o React a remontá-lo.
+  // Necessário aqui porque os campos usam `defaultValue` (não controlados):
+  // sem remontar, reabrir o modal para editar um item diferente manteria os
+  // valores do primeiro item já mostrado (defaultValue só se aplica na
+  // montagem inicial, e o Modal fica sempre montado, só escondido).
+  const [modalInstance, setModalInstance] = useState(0);
+
+  function openModal(item: MinistryItem | null) {
+    setEditing(item);
+    setModalInstance((n) => n + 1);
+    setModalOpen(true);
+  }
 
   return (
     <div>
@@ -35,10 +47,7 @@ export function MinistryManager({ items }: { items: MinistryItem[] }) {
         title="Ministérios"
         description="Frentes exibidas na home e na página /ministerios."
         actionLabel="Novo ministério"
-        onAction={() => {
-          setEditing(null);
-          setModalOpen(true);
-        }}
+        onAction={() => openModal(null)}
       />
 
       <div className="mt-8 flex flex-col gap-3">
@@ -66,10 +75,7 @@ export function MinistryManager({ items }: { items: MinistryItem[] }) {
               )}
               <button
                 type="button"
-                onClick={() => {
-                  setEditing(item);
-                  setModalOpen(true);
-                }}
+                onClick={() => openModal(item)}
                 className="shrink-0 rounded-lg px-3 py-1.5 text-xs text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground"
               >
                 Editar
@@ -84,7 +90,7 @@ export function MinistryManager({ items }: { items: MinistryItem[] }) {
         {items.length === 0 && <p className="text-sm text-foreground-subtle">Nenhum ministério cadastrado ainda.</p>}
       </div>
 
-      <MinistryModal open={modalOpen} onClose={() => setModalOpen(false)} editing={editing} />
+      <MinistryModal key={modalInstance} open={modalOpen} onClose={() => setModalOpen(false)} editing={editing} />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import "server-only";
 import type { DocumentData, FirestoreDataConverter, Timestamp } from "firebase-admin/firestore";
 import { FieldValue } from "firebase-admin/firestore";
 import { db } from "@/lib/firebase/admin";
+import type { Weekday } from "@/lib/services";
 
 /**
  * Coleções Firestore e seus conversores — o equivalente aos models do Prisma.
@@ -203,9 +204,21 @@ export const galleryRaw = () => db().collection("gallery");
 
 export interface SiteSettings {
   heroMediaType: string;
+  /** "upload" (vídeo enviado, em heroVideoUrl) ou "youtube" (heroYoutubeId). */
+  heroVideoSource: string;
   heroFocusY: number;
   heroVideoUrl: string;
-  heroPosterUrl: string;
+  heroYoutubeId: string;
+  /**
+   * Fotos do carrossel de fundo, na ordem em que alternam — tanto o fundo do
+   * modo "Foto" quanto o poster (frame de espera) do modo "Vídeo" usam
+   * `heroPosterUrls[0]`, não existe mais um campo de foto única separado. Uma
+   * foto só = fundo fixo; duas ou mais = alternam automaticamente. Lista
+   * gerenciada por `addHeroPhotoAction`/`removeHeroPhotoAction` (não pelo
+   * formulário grande de `updateSettingsAction`) — daí `updateSettingsAction`
+   * gravar com `{ merge: true }`, pra nunca sobrescrever esta lista à toa.
+   */
+  heroPosterUrls: string[];
   heroTitle: string;
   heroSubtitle: string;
   donationText: string;
@@ -220,9 +233,11 @@ export interface SiteSettings {
 
 export const SITE_SETTINGS_DEFAULTS: Omit<SiteSettings, "updatedAt"> = {
   heroMediaType: "video",
+  heroVideoSource: "upload",
   heroFocusY: 35,
   heroVideoUrl: "/videos/hero-placeholder.mp4",
-  heroPosterUrl: "/videos/hero-poster.jpg",
+  heroYoutubeId: "",
+  heroPosterUrls: [],
   heroTitle: "Amor e Cuidado em Adamantina",
   heroSubtitle: "Uma igreja pastoreada por células, em Adamantina e região.",
   donationText:
@@ -243,9 +258,12 @@ const siteSettingsConverter: FirestoreDataConverter<SiteSettings> = {
     const data = snap.data();
     return {
       heroMediaType: data.heroMediaType,
+      // `?? "upload"` cobre documentos salvos antes deste campo existir.
+      heroVideoSource: data.heroVideoSource ?? "upload",
       heroFocusY: data.heroFocusY,
       heroVideoUrl: data.heroVideoUrl,
-      heroPosterUrl: data.heroPosterUrl,
+      heroYoutubeId: data.heroYoutubeId ?? "",
+      heroPosterUrls: Array.isArray(data.heroPosterUrls) ? data.heroPosterUrls : [],
       heroTitle: data.heroTitle,
       heroSubtitle: data.heroSubtitle,
       donationText: data.donationText,
@@ -262,6 +280,362 @@ const siteSettingsConverter: FirestoreDataConverter<SiteSettings> = {
 
 export const siteSettingsDoc = () =>
   db().collection("settings").doc("site").withConverter(siteSettingsConverter);
+
+// ---------------------------------------------------------------------------
+// Leader — liderança local, editável pelo painel (substitui src/data/leaders.ts)
+// ---------------------------------------------------------------------------
+
+export interface Leader {
+  id: string;
+  name: string;
+  role: string;
+  quote: string | null;
+  photoUrl: string | null;
+  active: boolean;
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type LeaderInput = Omit<Leader, "id" | "createdAt" | "updatedAt">;
+
+const leaderConverter: FirestoreDataConverter<Leader> = {
+  toFirestore(leader) {
+    return toFirestoreData(leader);
+  },
+  fromFirestore(snap) {
+    const data = snap.data();
+    return {
+      id: snap.id,
+      name: data.name,
+      role: data.role,
+      quote: data.quote ?? null,
+      photoUrl: data.photoUrl ?? null,
+      active: data.active,
+      order: data.order,
+      createdAt: toDate(data.createdAt),
+      updatedAt: toDate(data.updatedAt),
+    };
+  },
+};
+
+export const leadersCollection = () => db().collection("leaders").withConverter(leaderConverter);
+/** Ver comentário em `ministriesRaw` — mesma razão. */
+export const leadersRaw = () => db().collection("leaders");
+
+// ---------------------------------------------------------------------------
+// Message — pregações em destaque (substitui src/data/messages.ts)
+// ---------------------------------------------------------------------------
+
+export interface Message {
+  id: string;
+  title: string;
+  speaker: string;
+  date: Date;
+  youtubeId: string;
+  published: boolean;
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type MessageInput = Omit<Message, "id" | "createdAt" | "updatedAt">;
+
+const messageConverter: FirestoreDataConverter<Message> = {
+  toFirestore(message) {
+    return toFirestoreData(message);
+  },
+  fromFirestore(snap) {
+    const data = snap.data();
+    return {
+      id: snap.id,
+      title: data.title,
+      speaker: data.speaker,
+      date: toDate(data.date),
+      youtubeId: data.youtubeId,
+      published: data.published,
+      order: data.order,
+      createdAt: toDate(data.createdAt),
+      updatedAt: toDate(data.updatedAt),
+    };
+  },
+};
+
+export const messagesCollection = () => db().collection("messages").withConverter(messageConverter);
+/** Ver comentário em `ministriesRaw` — mesma razão. */
+export const messagesRaw = () => db().collection("messages");
+
+// ---------------------------------------------------------------------------
+// SocialLink — canais oficiais (substitui src/data/socialLinks.ts)
+// ---------------------------------------------------------------------------
+
+export type SocialPlatform = "instagram" | "facebook" | "whatsapp" | "email" | "youtube" | "other";
+
+export interface SocialLink {
+  id: string;
+  platform: SocialPlatform;
+  label: string;
+  handle: string;
+  href: string;
+  external: boolean;
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type SocialLinkInput = Omit<SocialLink, "id" | "createdAt" | "updatedAt">;
+
+const socialLinkConverter: FirestoreDataConverter<SocialLink> = {
+  toFirestore(link) {
+    return toFirestoreData(link);
+  },
+  fromFirestore(snap) {
+    const data = snap.data();
+    return {
+      id: snap.id,
+      platform: data.platform,
+      label: data.label,
+      handle: data.handle,
+      href: data.href,
+      external: data.external,
+      order: data.order,
+      createdAt: toDate(data.createdAt),
+      updatedAt: toDate(data.updatedAt),
+    };
+  },
+};
+
+export const socialLinksCollection = () => db().collection("socialLinks").withConverter(socialLinkConverter);
+/** Ver comentário em `ministriesRaw` — mesma razão. */
+export const socialLinksRaw = () => db().collection("socialLinks");
+
+// ---------------------------------------------------------------------------
+// Service — horários de celebração (substitui unit.services em
+// src/data/unit.ts). `Weekday` mora em src/lib/services.ts (usado também por
+// componente client, que não pode importar este módulo `server-only`).
+// ---------------------------------------------------------------------------
+
+export interface Service {
+  id: string;
+  weekday: Weekday;
+  time: string;
+  label: string | null;
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type ServiceInput = Omit<Service, "id" | "createdAt" | "updatedAt">;
+
+const serviceConverter: FirestoreDataConverter<Service> = {
+  toFirestore(service) {
+    return toFirestoreData(service);
+  },
+  fromFirestore(snap) {
+    const data = snap.data();
+    return {
+      id: snap.id,
+      weekday: data.weekday,
+      time: data.time,
+      label: data.label ?? null,
+      order: data.order,
+      createdAt: toDate(data.createdAt),
+      updatedAt: toDate(data.updatedAt),
+    };
+  },
+};
+
+export const servicesCollection = () => db().collection("services").withConverter(serviceConverter);
+/** Ver comentário em `ministriesRaw` — mesma razão. */
+export const servicesRaw = () => db().collection("services");
+
+// ---------------------------------------------------------------------------
+// UnitInfo — identidade institucional (substitui o resto de src/data/unit.ts)
+// Documento único ("singleton"), mesmo padrão de SiteSettings: nasce com os
+// valores atualmente hardcoded na primeira leitura (ver getUnitInfo em
+// src/lib/data.ts), então não precisa de script de seed separado.
+// ---------------------------------------------------------------------------
+
+export interface UnitInfo {
+  name: string;
+  shortName: string;
+  initials: string;
+  tagline: string;
+  verseReference: string;
+  verseExcerpt: string;
+  verseReading: string;
+  modelTitle: string;
+  modelDescription: string;
+  isFirstExtension: boolean;
+  foundedYear: number;
+  foundedDateLabel: string;
+  foundingMembers: number;
+  originStory: string;
+  newTempleYear: number;
+  newTempleStory: string;
+  address: string;
+  city: string;
+  state: string;
+  contactEmail: string;
+  contactPhoneDisplay: string;
+  contactPhoneE164: string;
+  cellsCountLabel: string;
+  networkName: string;
+  networkSite: string;
+  networkHeadquartersCity: string;
+  networkHeadquartersState: string;
+  networkFoundedYear: number;
+  updatedAt: Date;
+}
+
+/** Valores hoje vigentes (fonte: antigo src/data/unit.ts) — viram o primeiro documento gravado. */
+export const UNIT_INFO_DEFAULTS: Omit<UnitInfo, "updatedAt"> = {
+  name: "Igreja Amor e Cuidado em Adamantina",
+  shortName: "Amor e Cuidado Adamantina",
+  initials: "AC",
+  tagline: "Um lugar de céus abertos!",
+  verseReference: "João 21:17",
+  verseExcerpt: "Cuide das minhas ovelhas",
+  verseReading: "Primeiro o amor a Jesus. Depois o cuidado com as pessoas.",
+  modelTitle: "Igreja pastoreada por células",
+  modelDescription: "Tudo acontece através delas.",
+  isFirstExtension: true,
+  foundedYear: 2014,
+  foundedDateLabel: "26 de junho de 2014",
+  foundingMembers: 47,
+  originStory:
+    "Começou informalmente numa garagem no centro de Adamantina, em 2013. Tornou-se oficialmente uma congregação em 26 de junho de 2014, com um grupo de 47 pessoas — adultos, jovens e adolescentes —, com sede inicial na Alameda Porto Alegre, na Vila Jamil de Lima.",
+  newTempleYear: 2024,
+  newTempleStory:
+    "Em novembro de 2024, a igreja inaugurou seu novo templo no Parque do Sol — um espaço que antes abrigava uma concessionária de veículos, reformado ao longo daquele ano. A inauguração teve dois dias de celebração: terça-feira, com a presença do Bispo Marcelo Toschi e do Ministério de Música da Amor e Cuidado, e quarta-feira, conduzida pelo pastor de adoração local, Lucas Donha.",
+  address: "Av. José Urbano Luize, 781 — Parque do Sol, Adamantina/SP",
+  city: "Adamantina",
+  state: "SP",
+  contactEmail: "iacadamantina@gmail.com",
+  contactPhoneDisplay: "(18) 3880-0209",
+  contactPhoneE164: "551838800209",
+  cellsCountLabel: "70+",
+  networkName: "Amor e Cuidado",
+  networkSite: "https://amorecuidado.com.br",
+  networkHeadquartersCity: "Araçatuba",
+  networkHeadquartersState: "SP",
+  networkFoundedYear: 1936,
+};
+
+const unitInfoConverter: FirestoreDataConverter<UnitInfo> = {
+  toFirestore(info) {
+    return toFirestoreData(info);
+  },
+  fromFirestore(snap) {
+    const data = snap.data();
+    return {
+      name: data.name,
+      shortName: data.shortName,
+      initials: data.initials,
+      tagline: data.tagline,
+      verseReference: data.verseReference,
+      verseExcerpt: data.verseExcerpt,
+      verseReading: data.verseReading,
+      modelTitle: data.modelTitle,
+      modelDescription: data.modelDescription,
+      isFirstExtension: data.isFirstExtension,
+      foundedYear: data.foundedYear,
+      foundedDateLabel: data.foundedDateLabel,
+      foundingMembers: data.foundingMembers,
+      originStory: data.originStory,
+      newTempleYear: data.newTempleYear,
+      newTempleStory: data.newTempleStory,
+      address: data.address,
+      city: data.city,
+      state: data.state,
+      contactEmail: data.contactEmail,
+      contactPhoneDisplay: data.contactPhoneDisplay,
+      contactPhoneE164: data.contactPhoneE164,
+      cellsCountLabel: data.cellsCountLabel,
+      networkName: data.networkName,
+      networkSite: data.networkSite,
+      networkHeadquartersCity: data.networkHeadquartersCity,
+      networkHeadquartersState: data.networkHeadquartersState,
+      networkFoundedYear: data.networkFoundedYear,
+      updatedAt: toDate(data.updatedAt),
+    };
+  },
+};
+
+export const unitInfoDoc = () => db().collection("settings").doc("unit").withConverter(unitInfoConverter);
+
+// ---------------------------------------------------------------------------
+// FormSubmission — envios dos formulários públicos (célula, decisão,
+// testemunho, oração) — a "caixa de entrada" do painel.
+// ---------------------------------------------------------------------------
+
+export type FormSubmissionType = "celula" | "decisao" | "testemunho" | "oracao";
+export type FormSubmissionStatus = "novo" | "atendido";
+
+export interface FormSubmission {
+  id: string;
+  type: FormSubmissionType;
+  name: string;
+  contact: string;
+  message: string | null;
+  status: FormSubmissionStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type FormSubmissionInput = Omit<FormSubmission, "id" | "createdAt" | "updatedAt" | "status">;
+
+const formSubmissionConverter: FirestoreDataConverter<FormSubmission> = {
+  toFirestore(submission) {
+    return toFirestoreData(submission);
+  },
+  fromFirestore(snap) {
+    const data = snap.data();
+    return {
+      id: snap.id,
+      type: data.type,
+      name: data.name,
+      contact: data.contact,
+      message: data.message ?? null,
+      status: data.status,
+      createdAt: toDate(data.createdAt),
+      updatedAt: toDate(data.updatedAt),
+    };
+  },
+};
+
+export const formSubmissionsCollection = () =>
+  db().collection("formSubmissions").withConverter(formSubmissionConverter);
+/** Ver comentário em `ministriesRaw` — mesma razão. */
+export const formSubmissionsRaw = () => db().collection("formSubmissions");
+
+// ---------------------------------------------------------------------------
+// formRateLimit — throttling best-effort por IP+tipo para o formulário
+// público (sem sessão, então não dá pra usar requireAdminSession). Mesmo
+// espírito de adminSecurity: sobrevive a restart do servidor.
+// ---------------------------------------------------------------------------
+
+export interface FormRateLimitDoc {
+  count: number;
+  windowStartsAt: Date;
+}
+
+const formRateLimitConverter: FirestoreDataConverter<FormRateLimitDoc> = {
+  toFirestore(value) {
+    return toFirestoreData(value);
+  },
+  fromFirestore(snap) {
+    const data = snap.data();
+    return {
+      count: data.count ?? 0,
+      windowStartsAt: toDate(data.windowStartsAt),
+    };
+  },
+};
+
+/** `key` é `${ip}:${type}`, já normalizado por quem chama. */
+export const formRateLimitDoc = (key: string) =>
+  db().collection("formRateLimit").doc(encodeURIComponent(key)).withConverter(formRateLimitConverter);
 
 // ---------------------------------------------------------------------------
 // adminSecurity — contador de tentativas de login, por e-mail (ver

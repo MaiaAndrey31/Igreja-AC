@@ -16,3 +16,17 @@ export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.iacadam
 export function absoluteUrl(path: string) {
   return `${siteUrl}${path.startsWith("/") ? path : `/${path}`}`;
 }
+
+/**
+ * Link `wa.me` a partir de um telefone em E.164 sem o `+` (ex.: "551838800209").
+ * Antes fechava sobre `unit.contact.phoneE164` (dado estático); agora recebe
+ * o telefone como parâmetro porque `unit` vem do Firestore, editável pelo
+ * painel — ver `getUnitInfo()` em `src/lib/data.ts`.
+ */
+export function whatsappUrl(phoneE164: string, message?: string) {
+  return `https://wa.me/${phoneE164}${message ? `?text=${encodeURIComponent(message)}` : ""}`;
+}
+
+export function mapsUrl(address: string) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+}

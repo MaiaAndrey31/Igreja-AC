@@ -18,12 +18,18 @@ const cspHeader = [
   `style-src 'self' 'unsafe-inline'`,
   // Uploads do admin (hero, galeria, avisos, logos de célula) ficam em
   // public/uploads/ — mesma origem do site, cobertos por 'self'. i.ytimg.com:
-  // thumbnails das mensagens, servidas pelo próprio YouTube (ver
-  // src/data/messages.ts) — evita hospedar cópia das capas.
+  // thumbnails das mensagens, servidas pelo próprio YouTube — evita hospedar
+  // cópia das capas.
   `img-src 'self' data: blob: https://i.ytimg.com`,
   `media-src 'self'`,
   `font-src 'self'`,
   `connect-src 'self'`,
+  // youtube-nocookie.com: vídeo de fundo do Hero quando a igreja usa um link
+  // do YouTube em vez de enviar um arquivo (ver
+  // src/components/home/HeroYoutubeBackground.tsx) — domínio de privacidade
+  // reforçada do próprio YouTube, sem cookie de rastreamento até haver
+  // interação com o player.
+  `frame-src https://www.youtube-nocookie.com`,
   `frame-ancestors 'none'`,
   `base-uri 'self'`,
   `form-action 'self'`,

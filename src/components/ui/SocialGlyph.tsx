@@ -1,5 +1,5 @@
-import { Mail } from "lucide-react";
-import type { SocialId } from "@/data/socialLinks";
+import { Mail, Link2 } from "lucide-react";
+import type { SocialPlatform } from "@/lib/firebase/collections";
 
 /**
  * lucide-react não traz ícones de marca (removidos por questão de trademark),
@@ -15,10 +15,19 @@ const strokeProps = {
   strokeLinejoin: "round",
 } as const;
 
-export function SocialGlyph({ id, size = 18 }: { id: SocialId; size?: number }) {
+export function SocialGlyph({ id, size = 18 }: { id: SocialPlatform; size?: number }) {
   const shared = { width: size, height: size, viewBox: "0 0 24 24", "aria-hidden": true } as const;
 
   switch (id) {
+    case "youtube":
+      return (
+        <svg {...shared} {...strokeProps}>
+          <rect x="2.5" y="5.5" width="19" height="13" rx="4" />
+          <path d="M10.5 9.5v5l4.5-2.5-4.5-2.5z" fill="currentColor" stroke="none" />
+        </svg>
+      );
+    case "other":
+      return <Link2 size={size} strokeWidth={1.8} aria-hidden="true" />;
     case "instagram":
       return (
         <svg {...shared} {...strokeProps}>
