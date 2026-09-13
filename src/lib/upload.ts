@@ -1,7 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { put } from "@vercel/blob";
 import sharp from "sharp";
 
 /**
@@ -12,26 +11,33 @@ import sharp from "sharp";
  * final é um UUID — nunca o nome enviado pelo usuário — o que também elimina
  * risco de path traversal.
  *
- * Arquivos vão para `public/uploads/`, servidos pelo próprio Next.js como
- * arquivo estático (`/uploads/<arquivo>`).
+ * Arquivos vão para o Vercel Blob (armazenamento externo, não disco local do
+ * app) — decisão obrigatória para rodar em host serverless como a Vercel:
+ * funções serverless têm disco somente leitura (exceto `/tmp`, apagado entre
+ * requisições), então qualquer arquivo gravado em `public/` durante a
+ * execução simplesmente não sobrevive até a próxima requisição, faça ela
+ * gravar em `public/uploads/`, `public/assets/` ou qualquer outra pasta — não
+ * é uma questão de qual pasta, é o disco inteiro do projeto que é read-only
+ * em produção lá.
  *
- * ATENÇÃO — isso só é seguro em host com disco PERSISTENTE (VPS, "Node.js
- * App" da Hostinger etc., que é o que o README deste projeto assume). Em
- * hospedagem serverless/containers efêmeros (Vercel, Cloud Run sem volume,
- * etc.) o diretório do app é recriado a cada deploy e todo arquivo gravado
- * aqui em runtime se perde no deploy seguinte. Se um dia migrarem para esse
- * tipo de host, troquem esta implementação por um object storage externo
- * (Supabase Storage, Firebase Storage, S3...) — a assinatura das duas funções
- * abaixo (`saveImageUpload`/`saveVideoUpload`) foi mantida estável
- * exatamente para isolar essa troca aqui dentro, sem mexer nas Server
- * Actions que as chamam.
+ * Exige a variável de ambiente `BLOB_READ_WRITE_TOKEN`:
+ * - Na Vercel: gerada sozinha ao conectar um Blob Store ao projeto (Vercel
+ *   Dashboard → Storage → Create Database → Blob), sem precisar copiar nada
+ *   manualmente.
+ * - Em desenvolvimento local: rode `vercel env pull .env.local` (com a
+ *   Vercel CLI, projeto já linkado) para trazer o token pro seu `.env.local`,
+ *   ou copie o valor manualmente do Dashboard.
+ *
+ * Se um dia o projeto migrar para um host com disco persistente (VPS,
+ * Hostinger "Node.js App" etc.) e quiserem voltar a gravar em disco local, a
+ * troca fica isolada aqui dentro — a assinatura de `saveImageUpload`/
+ * `saveVideoUpload` foi mantida estável exatamente para isso, sem precisar
+ * mexer nas Server Actions que as chamam.
  */
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8MB
 const MAX_VIDEO_BYTES = 60 * 1024 * 1024; // 60MB
 const ALLOWED_VIDEO_MIME = new Set(["video/mp4", "video/webm"]);
-
-const UPLOADS_DIR = path.join(process.cwd(), "public", "uploads");
 
 export interface UploadResult {
   url: string;
@@ -39,14 +45,16 @@ export interface UploadResult {
 
 export class UploadValidationError extends Error {}
 
-async function writeToDisk(filename: string, buffer: Buffer): Promise<string> {
+async function uploadToBlob(filename: string, buffer: Buffer, contentType: string): Promise<string> {
   try {
-    await mkdir(UPLOADS_DIR, { recursive: true });
-    await writeFile(path.join(UPLOADS_DIR, filename), buffer);
+    // `addRandomSuffix: false` — o UUID no nome já garante que não repete;
+    // deixar a lib acrescentar mais um sufixo só deixaria a URL mais longa
+    // à toa.
+    const blob = await put(filename, buffer, { access: "public", contentType, addRandomSuffix: false });
+    return blob.url;
   } catch (err) {
-    throw new Error(`Falha ao salvar arquivo em disco: ${(err as Error).message}`);
+    throw new Error(`Falha ao salvar arquivo no Vercel Blob: ${(err as Error).message}`);
   }
-  return `/uploads/${filename}`;
 }
 
 export async function saveImageUpload(file: File): Promise<UploadResult> {
@@ -82,7 +90,7 @@ export async function saveImageUpload(file: File): Promise<UploadResult> {
     .webp({ quality: 82 })
     .toBuffer();
 
-  const url = await writeToDisk(filename, output);
+  const url = await uploadToBlob(filename, output, "image/webp");
   return { url };
 }
 
@@ -99,6 +107,6 @@ export async function saveVideoUpload(file: File): Promise<UploadResult> {
   const extension = file.type === "video/webm" ? "webm" : "mp4";
   const filename = `${randomUUID()}.${extension}`;
 
-  const url = await writeToDisk(filename, buffer);
+  const url = await uploadToBlob(filename, buffer, file.type);
   return { url };
 }

@@ -49,7 +49,9 @@ ui-debug.log
 *firebase-adminsdk*.json
 serviceAccountKey.json
 
-# uploads de usuário (mídia enviada pelo painel admin — disco local, ver
-# src/lib/upload.ts)
+# Legado: uploads do painel iam para disco local aqui antes da migração para
+# o Vercel Blob (ver src/lib/upload.ts) — uploads novos não usam mais esta
+# pasta. Mantido por enquanto para não quebrar referências antigas já salvas
+# no Firestore por quem rodou o app localmente antes da migração.
 /public/uploads/*
 !/public/uploads/.gitkeep

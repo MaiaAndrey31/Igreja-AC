@@ -16,12 +16,14 @@ const cspHeader = [
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   // Framer Motion anima via inline style (element.style.*) em runtime.
   `style-src 'self' 'unsafe-inline'`,
-  // Uploads do admin (hero, galeria, avisos, logos de célula) ficam em
-  // public/uploads/ — mesma origem do site, cobertos por 'self'. i.ytimg.com:
+  // Uploads do admin (hero, galeria, avisos, logos de célula) vão para o
+  // Vercel Blob (ver src/lib/upload.ts — disco local não sobrevive em host
+  // serverless), por isso o domínio do Blob entra tanto em img-src quanto em
+  // media-src (fotos e vídeos enviados, respectivamente). i.ytimg.com:
   // thumbnails das mensagens, servidas pelo próprio YouTube — evita hospedar
   // cópia das capas.
-  `img-src 'self' data: blob: https://i.ytimg.com`,
-  `media-src 'self'`,
+  `img-src 'self' data: blob: https://i.ytimg.com https://*.public.blob.vercel-storage.com`,
+  `media-src 'self' https://*.public.blob.vercel-storage.com`,
   `font-src 'self'`,
   `connect-src 'self'`,
   // youtube-nocookie.com: vídeo de fundo do Hero quando a igreja usa um link
@@ -49,14 +51,19 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    // Uploads do admin são servidos de /uploads/** (mesma origem, disco local
-    // — ver src/lib/upload.ts), então não precisam de remotePattern. Só
-    // i.ytimg.com (thumbnails do YouTube nas mensagens) é remoto.
+    // i.ytimg.com: thumbnails do YouTube nas mensagens. *.public.blob.vercel-
+    // storage.com: uploads do admin (hero, galeria, avisos, logos de célula),
+    // desde a migração para o Vercel Blob — ver src/lib/upload.ts.
     remotePatterns: [
       {
         protocol: "https",
         hostname: "i.ytimg.com",
         pathname: "/vi/**",
+      },
+      {
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
+        pathname: "/**",
       },
     ],
   },

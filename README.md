@@ -12,8 +12,8 @@ local, liderança local, células da microrregião. A rede nacional aparece só 
 - Framer Motion (via `LazyMotion` + `MotionConfig reducedMotion="user"`)
 - **Firebase**: Firestore (banco) e Authentication (login do admin) — só pelo servidor, via Admin SDK
   (`firebase-admin`). O navegador nunca fala com o Firebase diretamente.
-- Uploads de mídia (fotos, vídeo do hero) ficam em **disco local**, em `public/uploads/` — não usam nenhum
-  serviço externo. Ver o alerta em "Deploy" sobre o que isso exige do host.
+- Uploads de mídia (fotos, vídeo do hero) ficam no **Vercel Blob** — não em disco local. Ver o alerta em
+  "Deploy" sobre por quê (disco de host serverless não sobrevive entre requisições).
 
 ## Arquitetura de acesso ao Firebase — leia antes de mexer em auth/dados
 
@@ -69,7 +69,8 @@ administrativo, usando as credenciais definidas em `.env`.
    erro que já traz o link direto para criá-lo em um clique (ver `firestore.indexes.json` para a lista
    completa; 8 índices ao todo, hoje).
 
-Não é preciso ativar o Storage — uploads de mídia ficam em disco local (ver seção "Deploy").
+Não é preciso ativar o Firebase Storage — uploads de mídia ficam no Vercel Blob (ver `BLOB_READ_WRITE_TOKEN`
+no `.env.example` e a seção "Deploy").
 
 Nenhuma migration é necessária — o Firestore não tem schema, as coleções nascem sozinhas no primeiro
 documento gravado pelo painel ou pelo `seed:initial`.
@@ -180,23 +181,27 @@ todos de uma vez com `firebase deploy --only firestore:indexes`, após `firebase
 
 ## Deploy
 
-O projeto **exige** um host com Node.js persistente e disco persistente (VPS, ou "Node.js App" da
-Hostinger, por exemplo) — não uma hospedagem serverless/containers efêmeros (Vercel, Cloud Run sem volume
-etc.). O motivo: os uploads do painel (`public/uploads/`) são gravados no disco local do servidor (ver
-`src/lib/upload.ts`); num host efêmero, esse diretório é recriado a cada deploy e todo arquivo enviado se
-perde. Se um dia migrarem para esse tipo de host, será preciso trocar `src/lib/upload.ts` por um object
-storage externo (Firebase Storage, Supabase Storage, S3...) antes — a interface das duas funções de upload
-foi mantida estável exatamente para isolar essa troca.
+O projeto roda em qualquer host que suporte Next.js, incluindo hosts **serverless** (Vercel, Cloud Run
+etc.) — uploads não dependem mais de disco local desde a migração para o Vercel Blob (ver
+`src/lib/upload.ts`). Funções serverless têm disco somente leitura (exceto `/tmp`, apagado entre
+requisições), o que antes exigia um host com disco persistente; o Blob resolve isso gravando fora do
+processo da aplicação.
 
-Passos:
+**Na Vercel:**
 
-1. Defina as variáveis `FIREBASE_*`, `NEXT_PUBLIC_SITE_URL`, `ADMIN_EMAIL` e `ADMIN_PASSWORD` como variáveis
-   de ambiente de produção (nunca reutilize os valores de exemplo do `.env.example`).
-2. Rode `npm run admin:create` uma vez, contra as credenciais de produção.
-3. Garanta que `public/uploads/` sobrevive a um redeploy (ex.: symlink para um diretório fora da pasta que o
-   deploy substitui, ou um volume persistente) — senão, cada deploy apaga hero/galeria/avisos já enviados.
-4. `npm run build && npm run start` (ou um process manager como PM2 na frente do `next start`).
-5. Inclua `public/uploads/` na rotina de backup — é o único dado deste projeto que não está no Firestore.
+1. Conecte um Blob Store ao projeto (Dashboard → Storage → Create Database → Blob) — isso já injeta
+   `BLOB_READ_WRITE_TOKEN` sozinho nas variáveis de ambiente do projeto, sem precisar copiar nada.
+2. Defina as demais variáveis (`FIREBASE_*`, `NEXT_PUBLIC_SITE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`) nas
+   variáveis de ambiente de produção (nunca reutilize os valores de exemplo do `.env.example`).
+3. Rode `npm run admin:create` uma vez, localmente, apontando para as credenciais de produção (ou via
+   `vercel env pull` + rodar o script local contra o Firebase de produção).
+4. Deploy normal (`vercel deploy` ou push pra branch conectada).
+
+**Em host com Node.js + disco persistente (VPS, "Node.js App" da Hostinger etc.):** os mesmos passos valem
+— o Vercel Blob funciona em qualquer ambiente com acesso à internet, não só hospedado na própria Vercel,
+já que é acessado por API/token. Se um dia preferirem voltar a gravar em disco local nesse tipo de host
+(evitando a dependência do Blob), a troca fica isolada em `src/lib/upload.ts` — a assinatura de
+`saveImageUpload`/`saveVideoUpload` foi mantida estável exatamente para isso.
 
 Não existe conteúdo de exemplo criado automaticamente — o painel começa vazio de propósito, para que nada
 fictício vá ao ar como se fosse real.
@@ -211,8 +216,8 @@ fictício vá ao ar como se fosse real.
 - Bloqueio de conta após 5 tentativas de login falhas (15 min), persistido no Firestore
   (`adminSecurity/{email}`) — sobrevive a restart do servidor.
 - Uploads: tipo de arquivo validado pelos bytes reais (não pela extensão), imagens reprocessadas via `sharp`
-  (remove EXIF/metadados), nomes de arquivo gerados aleatoriamente, gravados em `public/uploads/` (disco
-  local — ver o alerta em "Deploy" sobre persistência).
+  (remove EXIF/metadados), nomes de arquivo gerados aleatoriamente (UUID), gravados no Vercel Blob com
+  acesso público (`access: "public"` — são fotos/vídeos institucionais, não há dado sensível neles).
 - Content-Security-Policy sem nonce (para preservar a geração estática), além de `X-Frame-Options`,
   `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` e `Strict-Transport-Security` — ver
   `src/proxy.ts` e `next.config.mjs`.
