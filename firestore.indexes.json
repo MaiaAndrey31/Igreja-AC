@@ -1,0 +1,47 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "ministries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "published", "order": "ASCENDING" },
+        { "fieldPath": "highlight", "order": "DESCENDING" },
+        { "fieldPath": "order", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "cells",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "active", "order": "ASCENDING" },
+        { "fieldPath": "neighborhood", "order": "ASCENDING" },
+        { "fieldPath": "order", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "cells",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "neighborhood", "order": "ASCENDING" },
+        { "fieldPath": "order", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "announcements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "published", "order": "ASCENDING" },
+        { "fieldPath": "startDate", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "gallery",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "order", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

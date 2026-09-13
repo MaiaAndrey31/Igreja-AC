@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Identidade Amor e Cuidado
+
+   Duas camadas de token:
+
+   1. `--ac-*` — a paleta bruta da marca. Só muda quando a igreja entregar o
+      manual de marca oficial.
+   2. `--background`, `--foreground`, `--accent`… — papéis semânticos. Todo o
+      site (inclusive o painel /admin) usa só estes, via utilitários do
+      Tailwind (`bg-background`, `text-accent`, …).
+
+   A separação é o que permite a alternância dark/light entre seções: a classe
+   `.on-paper` reescreve apenas os papéis semânticos, e qualquer componente
+   dentro dela inverte sozinho — sem prop de tema, sem variante duplicada.
+
+   O preto é cor real da marca (`#1a1a1a` era o theme-color do site oficial);
+   `--ac-ink` é a versão quente dele. Não há cor de destaque na identidade:
+   logo, fachada e sinalização reais enviados pela igreja são estritamente
+   preto e branco — o dourado que existia aqui antes era placeholder e foi
+   removido. `--accent` agora é só o contraste máximo do próprio tema (papel
+   no escuro, tinta no claro) — a distinção "isto é interativo" vem de peso
+   tipográfico, tracking e sublinhado, não de matiz.
+   ========================================================================== */
+
+:root {
+  /* Paleta bruta da marca */
+  --ac-ink: #14120f; /* preto quente — fundo principal */
+  --ac-paper: #f6f2ea; /* papel quente — seções claras */
+  --ac-stone: #8c8577; /* texto secundário sobre fundo escuro */
+  --ac-line: #2a2722; /* hairlines sobre fundo escuro */
+
+  /* Derivado só para contraste — não é cor de marca. A pedra pura sobre
+     papel cairia a 3.3:1 (abaixo do mínimo AA); esta é a mesma família um
+     passo mais escura, a 5.4:1. */
+  --ac-stone-on-paper: #5e5849;
+
+  /* ---- Papéis semânticos: tema tinta (padrão) ---- */
+  --background: var(--ac-ink);
+  --surface: #1b1814;
+  --surface-2: #221e19;
+  --border-subtle: var(--ac-line);
+  --border-soft: #3a352d;
+  --foreground: var(--ac-paper);
+  --foreground-muted: #d8d2c6;
+  --foreground-subtle: var(--ac-stone);
+  --accent: var(--ac-paper); /* mesmo tom do foreground — sem cor de destaque */
+  --accent-contrast: var(--ac-ink); /* texto sobre um bloco preenchido de accent */
+  --accent-soft: rgba(246, 242, 234, 0.12);
+}
+
+/* Seções claras. Aplique no elemento da <section> — tudo dentro herda. */
+.on-paper {
+  --background: var(--ac-paper);
+  --surface: #efe9dd;
+  --surface-2: #e7e0d1;
+  --border-subtle: rgba(20, 18, 15, 0.1);
+  --border-soft: rgba(20, 18, 15, 0.2);
+  --foreground: var(--ac-ink);
+  --foreground-muted: #3a342b;
+  --foreground-subtle: var(--ac-stone-on-paper);
+  --accent: var(--ac-ink); /* mesmo tom do foreground — sem cor de destaque */
+  --accent-contrast: var(--ac-paper);
+  --accent-soft: rgba(20, 18, 15, 0.08);
+
+  background: var(--background);
+  color: var(--foreground-muted);
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-soft: var(--border-soft);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
+  --color-accent: var(--accent);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-accent-soft: var(--accent-soft);
+
+  /* Paleta bruta, para os poucos casos que precisam da cor fixa
+     independentemente da seção estar em tinta ou papel (ex.: o overlay do
+     Hero, que é sempre escuro). */
+  --color-ink: var(--ac-ink);
+  --color-paper: var(--ac-paper);
+
+  /* Três papéis tipográficos. Display e corpo carregam a voz; a mono é
+     reservada a dado operacional (horário, data, endereço) — a troca de
+     família é o que sinaliza "isto é informação real, não decoração". */
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-data);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--ac-ink);
+  color: var(--foreground-muted);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--foreground);
+}
+
+/* Big Shoulders é condensada e de alto contraste — pede tracking próprio e
+   pesos altos para não parecer frágil em corpo grande. */
+.font-display {
+  font-family: var(--font-display), "Archivo Narrow", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 0.92;
+}
+
+/* Dado operacional: horário, data, endereço, telefone. */
+.font-data {
+  font-family: var(--font-data), ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hairline de seção — a régua fina que separa blocos no lugar de card. */
+.rule {
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Foco visível consistente nos dois temas. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Requisito não-negociável: quem pediu menos movimento recebe menos
+   movimento. Os reveals do Framer Motion já respeitam isso via
+   `MotionConfig reducedMotion="user"`; esta regra cobre o CSS puro
+   (transições, parallax, `animate-ping` etc.). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

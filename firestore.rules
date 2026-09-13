@@ -1,0 +1,74 @@
+rules_version = '2';
+
+// Regras do Firestore — Igreja Amor e Cuidado.
+//
+// Arquitetura deste projeto: só o servidor (Server Actions do Next.js, via
+// Firebase Admin SDK) fala com o Firestore. O navegador NUNCA acessa o banco
+// diretamente — nem o site público, nem o painel /admin. Toda leitura e toda
+// escrita passam primeiro pela validação e pela checagem de sessão do
+// próprio Next.js (ver requireAdminSession em src/lib/auth/session.ts).
+//
+// O Admin SDK ignora estas regras por completo — elas nunca entram em jogo
+// no caminho normal de uso do site. Elas existem como DEFESA EM PROFUNDIDADE:
+// se um dia alguém apontar o SDK de cliente do Firebase direto para este
+// projeto (por engano ou por má intenção), a regra abaixo barra qualquer
+// leitura ou escrita.
+//
+// Se no futuro vocês quiserem que o site leia dados direto do Firestore pelo
+// navegador (ex.: atualização em tempo real de Avisos sem precisar recarregar
+// a página), troque o bloco "COMO ESTÁ HOJE" pelo bloco comentado
+// "CRESCIMENTO FUTURO" abaixo — ele já libera leitura pública do conteúdo
+// publicado e mantém a escrita restrita a quem tem a claim "admin" (definida
+// em scripts/create-admin.ts, via Firebase Authentication).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------------------------------------------------
+    // COMO ESTÁ HOJE: nega toda leitura e escrita vinda de SDK de cliente.
+    // ---------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ---------------------------------------------------------------------
+    // CRESCIMENTO FUTURO (desativado — remova o bloco acima e descomente
+    // este para habilitar leitura pública em tempo real pelo navegador):
+    // ---------------------------------------------------------------------
+    //
+    // function isAdmin() {
+    //   return request.auth != null && request.auth.token.admin == true;
+    // }
+    //
+    // match /ministries/{id} {
+    //   allow read: if resource.data.published == true;
+    //   allow write: if isAdmin();
+    // }
+    //
+    // match /cells/{id} {
+    //   allow read: if resource.data.active == true;
+    //   allow write: if isAdmin();
+    // }
+    //
+    // match /announcements/{id} {
+    //   allow read: if resource.data.published == true;
+    //   allow write: if isAdmin();
+    // }
+    //
+    // match /gallery/{id} {
+    //   allow read: if true;
+    //   allow write: if isAdmin();
+    // }
+    //
+    // match /settings/site {
+    //   allow read: if true;
+    //   allow write: if isAdmin();
+    // }
+    //
+    // // Nunca legível/gravável por cliente, mesmo no modo "crescimento
+    // // futuro" — é o contador de tentativas de login (força bruta).
+    // match /adminSecurity/{email} {
+    //   allow read, write: if false;
+    // }
+  }
+}
