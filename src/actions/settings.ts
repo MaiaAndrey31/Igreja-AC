@@ -29,7 +29,13 @@ export async function updateSettingsAction(
       heroVideoUrl = result.url;
     } catch (err) {
       if (err instanceof UploadValidationError) return { error: err.message };
-      return { error: "Falha ao processar o vídeo." };
+      // Erro inesperado (ex.: Vercel Blob sem token, indisponível) — loga
+      // pro Vercel capturar nos logs da função e mostra a causa real pro
+      // admin: só quem já está logado vê isso, então não há problema em
+      // expor detalhe técnico aqui (ajuda a diagnosticar sem precisar
+      // acessar os logs).
+      console.error("Falha ao processar upload de vídeo do Hero:", err);
+      return { error: `Falha ao processar o vídeo: ${(err as Error).message}` };
     }
   }
 
@@ -97,7 +103,12 @@ export async function addHeroPhotoAction(_prev: ActionState, formData: FormData)
     url = result.url;
   } catch (err) {
     if (err instanceof UploadValidationError) return { error: err.message };
-    return { error: "Falha ao processar a imagem." };
+    // Erro inesperado (ex.: Vercel Blob sem token, indisponível) — loga pro
+    // Vercel capturar nos logs da função e mostra a causa real pro admin: só
+    // quem já está logado vê isso, então não há problema em expor detalhe
+    // técnico aqui (ajuda a diagnosticar sem precisar acessar os logs).
+    console.error("Falha ao processar upload de foto do Hero:", err);
+    return { error: `Falha ao processar a imagem: ${(err as Error).message}` };
   }
 
   // `arrayUnion`/raw doc (sem o conversor): evita ler-modificar-escrever e

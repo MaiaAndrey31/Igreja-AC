@@ -17,7 +17,8 @@ async function resolveLogoUrl(formData: FormData, currentUrl: string): Promise<s
     return result.url;
   } catch (err) {
     if (err instanceof UploadValidationError) return { error: err.message };
-    return { error: "Falha ao processar a imagem da célula." };
+    console.error("Falha ao processar upload de logo de célula:", err);
+    return { error: `Falha ao processar a imagem da célula: ${(err as Error).message}` };
   }
 }
 

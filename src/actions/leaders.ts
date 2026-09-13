@@ -17,7 +17,8 @@ async function resolvePhotoUrl(formData: FormData, currentUrl: string): Promise<
     return result.url;
   } catch (err) {
     if (err instanceof UploadValidationError) return { error: err.message };
-    return { error: "Falha ao processar a foto." };
+    console.error("Falha ao processar upload de foto de líder:", err);
+    return { error: `Falha ao processar a foto: ${(err as Error).message}` };
   }
 }
 

@@ -56,7 +56,12 @@ export function Modal({ open, onClose, title, children, maxWidthClassName = "max
       onClose={onClose}
       onCancel={onClose}
       className={cn(
-        "w-[92vw] rounded-2xl border border-border-soft bg-surface p-0 text-foreground backdrop:bg-black/70 backdrop:backdrop-blur-sm",
+        // `fixed inset-0 m-auto`: centraliza de forma explícita, sem depender
+        // do `margin: auto` que o navegador aplica por padrão a
+        // `dialog:modal` — o preflight do Tailwind zera margin em todo
+        // elemento (`* { margin: 0 }`), o que quebra essa centralização
+        // nativa e deixava o modal grudado num canto.
+        "fixed inset-0 m-auto h-fit max-h-[85vh] w-[92vw] rounded-2xl border border-border-soft bg-surface p-0 text-foreground backdrop:bg-black/70 backdrop:backdrop-blur-sm",
         maxWidthClassName
       )}
     >

@@ -25,7 +25,8 @@ export async function uploadGalleryImageAction(
     url = result.url;
   } catch (err) {
     if (err instanceof UploadValidationError) return { error: err.message };
-    return { error: "Falha ao processar a imagem." };
+    console.error("Falha ao processar upload de imagem da galeria:", err);
+    return { error: `Falha ao processar a imagem: ${(err as Error).message}` };
   }
 
   const parsed = galleryImageSchema.safeParse({
