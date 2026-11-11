@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState, useRef } from "react";
 import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, X, Loader2 } from "lucide-react";
 import { submitDynamicFormAction } from "@/actions/dynamicSubmissions";
+import { uploadFormFileAction } from "@/actions/formUploads";
 import type { ActionState } from "@/actions/auth";
 import type { DynamicForm, DynamicFormField } from "@/lib/forms/types";
 import { FieldGroup, Input, Textarea, Select } from "@/components/ui/Field";
@@ -75,7 +76,7 @@ export function DynamicFormRenderer({
         />
 
         {fields.map((field) => (
-          <FormFieldRenderer key={field.id} field={field} />
+          <FormFieldRenderer key={field.id} field={field} formSlug={form.slug} />
         ))}
 
         {state.error && (
@@ -99,7 +100,7 @@ export function DynamicFormRenderer({
 // Renderizador individual de campo
 // ---------------------------------------------------------------------------
 
-function FormFieldRenderer({ field }: { field: DynamicFormField }) {
+function FormFieldRenderer({ field, formSlug }: { field: DynamicFormField; formSlug: string }) {
   const isRequired = field.required;
 
   switch (field.type) {
@@ -283,27 +284,129 @@ function FormFieldRenderer({ field }: { field: DynamicFormField }) {
 
     case "file":
       return (
-        <FieldGroup
-          label={field.label}
-          htmlFor={field.id}
-          hint={
-            field.description ||
-            (field.validation?.maxFileSizeBytes
-              ? `Máximo: ${Math.round(field.validation.maxFileSizeBytes / (1024 * 1024))}MB`
-              : undefined)
-          }
-        >
-          <Input
-            id={field.id}
-            name={field.id}
-            type="file"
-            required={isRequired}
-            accept={field.validation?.allowedMimeTypes?.join(",")}
-          />
-        </FieldGroup>
+        <FileUploadField
+          key={field.id}
+          field={field}
+          formSlug={formSlug}
+          isRequired={isRequired}
+        />
       );
 
     default:
       return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Upload de arquivo com progresso e feedback
+// ---------------------------------------------------------------------------
+
+function FileUploadField({
+  field,
+  formSlug,
+  isRequired,
+}: {
+  field: DynamicFormField;
+  formSlug: string;
+  isRequired: boolean;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError(null);
+
+    const formData = new FormData();
+    formData.append(field.id, file);
+
+    try {
+      // Chama a Server Action de upload público diretamente
+      const result = await uploadFormFileAction(formSlug, field.id, {}, formData);
+      if (result.error) {
+        setError(result.error);
+        setUploadedUrl(null);
+        // Limpa o input para permitir nova tentativa
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      } else if (result.url) {
+        setUploadedUrl(result.url);
+      }
+    } catch {
+      setError("Falha ao enviar o arquivo. Tente novamente.");
+      setUploadedUrl(null);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function handleRemove() {
+    setUploadedUrl(null);
+    setError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  const maxMB = field.validation?.maxFileSizeBytes
+    ? Math.round(field.validation.maxFileSizeBytes / (1024 * 1024))
+    : 10;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="text-sm font-medium text-foreground">
+        {field.label}
+        {isRequired && <span className="ml-1 text-accent">*</span>}
+      </label>
+      {(field.description || maxMB) && (
+        <p className="text-xs text-foreground-subtle">
+          {field.description}
+          {field.description && maxMB ? " · " : ""}
+          {maxMB ? `Máximo: ${maxMB}MB` : ""}
+        </p>
+      )}
+
+      {/* Campo oculto com a URL do arquivo enviado — é este valor que vai na submissão */}
+      <input type="hidden" name={field.id} value={uploadedUrl ?? ""} />
+
+      {uploadedUrl ? (
+        <div className="flex items-center gap-3 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3">
+          <CheckCircle2 size={16} className="shrink-0 text-green-400" />
+          <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+            Arquivo enviado com sucesso
+          </span>
+          <button
+            type="button"
+            onClick={handleRemove}
+            className="shrink-0 rounded p-1 text-foreground-muted transition-colors hover:text-red-300"
+            title="Remover arquivo"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      ) : (
+        <div className="relative">
+          <input
+            ref={fileInputRef}
+            id={field.id}
+            type="file"
+            disabled={uploading}
+            required={isRequired && !uploadedUrl}
+            accept={field.validation?.allowedMimeTypes?.join(",") || "image/jpeg,image/png,image/webp,application/pdf"}
+            onChange={handleFileChange}
+            className="w-full rounded-lg border border-border-subtle bg-surface px-4 py-3 text-sm text-foreground file:mr-4 file:rounded-md file:border-0 file:bg-accent file:px-4 file:py-2 file:text-xs file:font-medium file:uppercase file:tracking-wider file:text-accent-contrast hover:file:bg-accent/90 focus:border-accent focus:outline-none disabled:opacity-50"
+          />
+          {uploading && (
+            <div className="absolute inset-y-0 right-3 flex items-center">
+              <Loader2 size={16} className="animate-spin text-foreground-subtle" />
+            </div>
+          )}
+        </div>
+      )}
+
+      {error && <p className="text-xs text-red-400">{error}</p>}
+    </div>
+  );
 }
