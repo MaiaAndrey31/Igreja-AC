@@ -66,14 +66,7 @@ export function Header({ unit }: { unit: UnitInfo }) {
             className="h-8 w-auto shrink-0 object-contain sm:h-10"
             priority
           />
-          <span className="flex flex-col leading-none">
-            <span className="font-display text-lg leading-none text-paper uppercase sm:text-xl">
-              Amor e Cuidado
-            </span>
-            <span className="font-data mt-1 text-[10px] uppercase tracking-[0.2em] text-foreground-subtle">
-              Adamantina
-            </span>
-          </span>
+          
         </Link>
 
         <nav aria-label="Navegação principal" className="hidden items-center gap-7 lg:flex">
