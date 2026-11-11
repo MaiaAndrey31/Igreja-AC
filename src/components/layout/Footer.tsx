@@ -147,6 +147,20 @@ export function Footer({ unit, socialLinks }: { unit: UnitInfo; socialLinks: Soc
           </p>
           <p>Tratamento de dados em conformidade com a LGPD (Lei nº 13.709/2018).</p>
         </div>
+
+        <div className="border-t border-border-subtle py-6 text-center text-[11px] text-foreground-subtle">
+          <p>
+            Desenvolvido por{" "}
+            <a
+              href="https://www.instagram.com/oandreymaia.dev/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground-muted underline decoration-accent/40 underline-offset-2 transition-colors hover:text-accent"
+            >
+              Andrey Maia
+            </a>
+          </p>
+        </div>
       </div>
     </footer>
   );
