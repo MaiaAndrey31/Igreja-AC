@@ -1,6 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CookieConsentBanner } from "@/components/layout/CookieConsentBanner";
+import { WhatsappButton } from "@/components/layout/WhatsappButton";
 import { getSocialLinks, getUnitInfo } from "@/lib/data";
 
 // Header/Footer aparecem em toda página pública, e ambos leem dados editáveis
@@ -16,6 +17,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <Header unit={unit} />
       <main className="flex-1">{children}</main>
       <Footer unit={unit} socialLinks={socialLinks} />
+      <WhatsappButton phoneE164={unit.contactPhoneE164} />
       <CookieConsentBanner />
     </>
   );
