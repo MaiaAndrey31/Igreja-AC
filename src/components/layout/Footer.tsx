@@ -123,15 +123,14 @@ export function Footer({ unit, socialLinks }: { unit: UnitInfo; socialLinks: Soc
           </p>
         </div>
 
-        {/* Wordmark real como selo de fechamento — a marca oficial da igreja,
-            não mais texto gerado por CSS. */}
+        {/* Logo vertical branca como selo de fechamento do rodapé. */}
         <div className="flex justify-center border-t border-border-subtle py-12 sm:justify-start">
           <Image
-            src="/assets/brand/logo-wordmark.png"
+            src="/assets/brand/BrancaVertical.png"
             alt={unit.name}
-            width={140}
-            height={139}
-            className="h-auto w-28 sm:w-36"
+            width={100}
+            height={120}
+            className="h-auto w-24 sm:w-28"
           />
         </div>
 

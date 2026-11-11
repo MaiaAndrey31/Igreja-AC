@@ -57,14 +57,13 @@ export function Header({ unit }: { unit: UnitInfo }) {
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:h-20 sm:px-8">
         <Link href="/" className="flex items-center gap-2.5" aria-label={`${unit.name} — início`}>
-          {/* Ícone real da marca (variante para fundo escuro — bg-ink do
-              header combina com o preto já embutido na imagem). */}
+          {/* Logo horizontal branca sobre fundo escuro do header. */}
           <Image
-            src="/assets/brand/logo-icon-dark.jpg"
+            src="/assets/brand/BrancaHorizontal.png"
             alt=""
-            width={32}
-            height={32}
-            className="h-8 w-8 shrink-0 object-contain"
+            width={160}
+            height={40}
+            className="h-8 w-auto shrink-0 object-contain sm:h-10"
             priority
           />
           <span className="flex flex-col leading-none">
