@@ -129,3 +129,24 @@ export const getUnitInfo = cache(async (): Promise<UnitInfo> => {
   await ref.set(initial);
   return initial;
 });
+
+// ---------------------------------------------------------------------------
+// DynamicForm — formulário público por slug
+// ---------------------------------------------------------------------------
+
+import { formsCollection, type DynamicForm } from "@/lib/firebase/collections";
+
+/**
+ * Busca um formulário publicado pelo slug. Retorna null se não existir ou se
+ * estiver em rascunho/arquivado. A disponibilidade efetiva é calculada pelo
+ * caller via `computeEffectiveStatus` (src/lib/forms/availability.ts).
+ */
+export async function getPublishedFormBySlug(slug: string): Promise<DynamicForm | null> {
+  const snap = await formsCollection()
+    .where("slug", "==", slug)
+    .where("adminStatus", "==", "published")
+    .limit(1)
+    .get();
+  if (snap.empty) return null;
+  return snap.docs[0].data();
+}

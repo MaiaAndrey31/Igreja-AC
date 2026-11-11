@@ -694,3 +694,136 @@ function toFirestoreData(value: object): DocumentData {
   }
   return data;
 }
+
+// ---------------------------------------------------------------------------
+// DynamicForm — formulários dinâmicos criados pelo admin
+// ---------------------------------------------------------------------------
+
+export type {
+  DynamicFormFieldType,
+  SelectOption,
+  FieldValidation,
+  DynamicFormField,
+  AvailabilityMode,
+  AvailabilityConfig,
+  FormAdminStatus,
+  FormEffectiveStatus,
+  FormPurpose,
+  DynamicForm,
+  DynamicFormInput,
+  SubmissionStatus,
+  DynamicFormSubmission,
+  DynamicFormSubmissionInput,
+  FormRateLimitEntry,
+} from "@/lib/forms/types";
+
+import type {
+  DynamicFormField,
+  AvailabilityConfig,
+  FormAdminStatus,
+  DynamicForm,
+  SubmissionStatus,
+  DynamicFormSubmission,
+} from "@/lib/forms/types";
+
+const dynamicFormConverter: FirestoreDataConverter<DynamicForm> = {
+  toFirestore(form) {
+    return toFirestoreData(form);
+  },
+  fromFirestore(snap) {
+    const data = snap.data();
+    return {
+      id: snap.id,
+      title: data.title,
+      description: data.description ?? "",
+      slug: data.slug,
+      purpose: data.purpose,
+      fields: (data.fields ?? []) as DynamicFormField[],
+      schemaVersion: data.schemaVersion ?? 1,
+      publishedFieldsSnapshot:
+        Array.isArray(data.publishedFieldsSnapshot)
+          ? (data.publishedFieldsSnapshot as DynamicFormField[])
+          : null,
+      availability: (data.availability ?? {
+        mode: "manual",
+      }) as AvailabilityConfig,
+      adminStatus: (data.adminStatus ?? "draft") as FormAdminStatus,
+      maxSubmissions: data.maxSubmissions ?? null,
+      submissionCount: data.submissionCount ?? 0,
+      showRemainingSlots: data.showRemainingSlots ?? false,
+      eventRef: data.eventRef ?? null,
+      createdAt: toDate(data.createdAt),
+      updatedAt: toDate(data.updatedAt),
+    };
+  },
+};
+
+export const formsCollection = () =>
+  db().collection("forms").withConverter(dynamicFormConverter);
+export const formsRaw = () => db().collection("forms");
+
+// ---------------------------------------------------------------------------
+// DynamicFormSubmission — respostas dos formulários dinâmicos
+// Subcoleção: forms/{formId}/submissions/{submissionId}
+// ---------------------------------------------------------------------------
+
+const dynamicFormSubmissionConverter:
+  FirestoreDataConverter<DynamicFormSubmission> = {
+  toFirestore(submission) {
+    return toFirestoreData(submission);
+  },
+  fromFirestore(snap) {
+    const data = snap.data();
+    return {
+      id: snap.id,
+      formId: data.formId,
+      schemaVersion: data.schemaVersion ?? 1,
+      answers: (data.answers ?? {}) as Record<string, unknown>,
+      files: (data.files ?? {}) as Record<string, string>,
+      status: (data.status ?? "confirmed") as SubmissionStatus,
+      createdAt: toDate(data.createdAt),
+    };
+  },
+};
+
+/** Subcoleção de submissões de um formulário específico. */
+export const formSubmissionsDynCollection = (formId: string) =>
+  db()
+    .collection("forms")
+    .doc(formId)
+    .collection("submissions")
+    .withConverter(dynamicFormSubmissionConverter);
+
+export const formSubmissionsDynRaw = (formId: string) =>
+  db().collection("forms").doc(formId).collection("submissions");
+
+// ---------------------------------------------------------------------------
+// dynamicFormRateLimit — rate limit por formulário + IP hash
+// Coleção separada para não poluir o namespace existente de formRateLimit
+// ---------------------------------------------------------------------------
+
+import type { FormRateLimitEntry } from "@/lib/forms/types";
+
+const dynamicFormRateLimitConverter: FirestoreDataConverter<FormRateLimitEntry> =
+  {
+    toFirestore(entry) {
+      return toFirestoreData(entry);
+    },
+    fromFirestore(snap) {
+      const data = snap.data();
+      return {
+        count: data.count ?? 0,
+        windowStartsAt: toDate(data.windowStartsAt),
+      };
+    },
+  };
+
+/**
+ * Chave é `${sha256(ip)}:${formId}` — IP hashed para evitar persistir
+ * endereços brutos (LGPD). O hash é calculado pelo caller.
+ */
+export const dynamicFormRateLimitDoc = (key: string) =>
+  db()
+    .collection("dynamicFormRateLimit")
+    .doc(encodeURIComponent(key))
+    .withConverter(dynamicFormRateLimitConverter);

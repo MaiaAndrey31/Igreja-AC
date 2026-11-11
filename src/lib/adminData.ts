@@ -3,6 +3,8 @@ import {
   announcementsCollection,
   cellsCollection,
   formSubmissionsCollection,
+  formsCollection,
+  formSubmissionsDynCollection,
   galleryCollection,
   leadersCollection,
   messagesCollection,
@@ -11,6 +13,8 @@ import {
   socialLinksCollection,
   type Announcement,
   type Cell,
+  type DynamicForm,
+  type DynamicFormSubmission,
   type FormSubmission,
   type GalleryImage,
   type Leader,
@@ -116,4 +120,65 @@ export async function getAdminCounts(): Promise<AdminCounts> {
     gallery: gallery.data().count,
     unreadSubmissions: unreadSubmissions.data().count,
   };
+}
+
+// ---------------------------------------------------------------------------
+// DynamicForm — leituras administrativas
+// ---------------------------------------------------------------------------
+
+export function getAllForms(): Promise<DynamicForm[]> {
+  return formsCollection()
+    .orderBy("updatedAt", "desc")
+    .get()
+    .then((snap) => snap.docs.map((doc) => doc.data()));
+}
+
+export async function getFormById(id: string): Promise<DynamicForm | null> {
+  const snap = await formsCollection().doc(id).get();
+  if (!snap.exists) return null;
+  return snap.data()!;
+}
+
+export function getFormSubmissions(formId: string): Promise<DynamicFormSubmission[]> {
+  return formSubmissionsDynCollection(formId)
+    .orderBy("createdAt", "desc")
+    .get()
+    .then((snap) => snap.docs.map((doc) => doc.data()));
+}
+
+export interface FormAdminCounts {
+  total: number;
+  active: number;
+  closed: number;
+  totalSubmissions: number;
+}
+
+export async function getFormAdminCounts(): Promise<FormAdminCounts> {
+  const all = await getAllForms();
+  const now = new Date();
+
+  let active = 0;
+  let closed = 0;
+  let totalSubmissions = 0;
+
+  for (const form of all) {
+    totalSubmissions += form.submissionCount;
+    if (form.adminStatus === "published") {
+      // Usa a lógica de disponibilidade para determinar se está ativo
+      const { computeEffectiveStatus } = await import("@/lib/forms/availability");
+      const status = computeEffectiveStatus(
+        {
+          adminStatus: form.adminStatus,
+          availability: form.availability,
+          submissionCount: form.submissionCount,
+          maxSubmissions: form.maxSubmissions,
+        },
+        now
+      );
+      if (status === "open") active++;
+      else closed++;
+    }
+  }
+
+  return { total: all.length, active, closed, totalSubmissions };
 }

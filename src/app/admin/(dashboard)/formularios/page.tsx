@@ -1,0 +1,80 @@
+import Link from "next/link";
+import { Plus } from "lucide-react";
+import { getAllForms, getFormAdminCounts } from "@/lib/adminData";
+import { computeEffectiveStatus } from "@/lib/forms/availability";
+import { FormsListClient } from "@/components/admin/forms/FormsListClient";
+
+export default async function AdminFormsPage() {
+  const [forms, counts] = await Promise.all([
+    getAllForms(),
+    getFormAdminCounts(),
+  ]);
+
+  // Calcula status efetivo para cada formulário
+  const now = new Date();
+  const formsWithStatus = forms.map((form) => ({
+    ...form,
+    effectiveStatus: computeEffectiveStatus(
+      {
+        adminStatus: form.adminStatus,
+        availability: form.availability,
+        submissionCount: form.submissionCount,
+        maxSubmissions: form.maxSubmissions,
+      },
+      now
+    ),
+  }));
+
+  return (
+    <div className="flex flex-col gap-8">
+      {/* Contadores */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatCard label="Total" value={counts.total} />
+        <StatCard label="Ativos" value={counts.active} accent />
+        <StatCard label="Encerrados" value={counts.closed} />
+        <StatCard label="Respostas" value={counts.totalSubmissions} />
+      </div>
+
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <h1 className="font-display text-2xl tracking-wide text-foreground">Formulários</h1>
+          <p className="mt-2 text-sm text-foreground-subtle">Crie formulários personalizados para inscrições, pesquisas e cadastros.</p>
+        </div>
+        <Link
+          href="/admin/formularios/novo"
+          className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-xs font-medium uppercase tracking-[0.15em] text-background transition-colors hover:bg-accent"
+        >
+          <Plus size={15} />
+          Novo formulário
+        </Link>
+      </div>
+
+      <FormsListClient forms={formsWithStatus} />
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number;
+  accent?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-border-subtle bg-surface px-5 py-4">
+      <p className="text-xs uppercase tracking-wider text-foreground-subtle">
+        {label}
+      </p>
+      <p
+        className={`mt-1 font-display text-2xl ${
+          accent ? "text-accent" : "text-foreground"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}

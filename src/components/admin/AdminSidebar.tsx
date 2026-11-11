@@ -18,6 +18,7 @@ import {
   Clock,
   Building2,
   Inbox,
+  FileText,
 } from "lucide-react";
 import { logoutAction } from "@/actions/auth";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,7 @@ const NAV_GROUPS = [
       { href: "/admin/galeria", label: "Galeria", icon: Images },
       { href: "/admin/lideranca", label: "Liderança", icon: UserRound },
       { href: "/admin/mensagens", label: "Mensagens", icon: PlayCircle },
+      { href: "/admin/formularios", label: "Formulários", icon: FileText },
     ],
   },
   {
