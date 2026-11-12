@@ -89,11 +89,11 @@
   --color-paper: var(--ac-paper);
 
   /* Tipografia oficial: Helvetica Neue LT Std como fonte padrão do projeto.
-     Display (Big Shoulders) mantém seu papel em títulos decorativos; a mono
-     é reservada a dado operacional (horário, data, endereço). A Helvetica
-     Neue substitui a Inter como corpo de texto em todo o site e painel admin. */
-  --font-sans: var(--font-helvetica-neue), var(--font-body), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-display);
+     A mono é reservada a dado operacional (horário, data, endereço).
+     A Helvetica Neue substitui todas as fontes anteriores (Inter, Big Shoulders)
+     como corpo de texto e títulos em todo o site e painel admin. */
+  --font-sans: var(--font-helvetica-neue), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-helvetica-neue), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-data);
 }
 
@@ -120,11 +120,12 @@ input, select, textarea, button {
   color: var(--foreground);
 }
 
-/* Big Shoulders é condensada e de alto contraste — pede tracking próprio e
-   pesos altos para não parecer frágil em corpo grande. */
+/* Títulos display usam Helvetica Neue LT Std (Bold Condensed mapeado como
+   weight 700 na configuração next/font/local). Tracking e line-height
+   preservam a hierarquia visual original sem depender de Big Shoulders. */
 .font-display {
-  font-family: var(--font-display), "Archivo Narrow", ui-sans-serif, system-ui, sans-serif;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 0.92;
 }

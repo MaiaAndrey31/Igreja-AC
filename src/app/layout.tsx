@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Big_Shoulders, Inter, IBM_Plex_Mono } from "next/font/google";
+import { IBM_Plex_Mono } from "next/font/google";
 import { ToastProvider } from "@/components/ui/Toast";
 import { MotionProvider } from "@/components/providers/MotionProvider";
 import { getUnitInfo } from "@/lib/data";
@@ -8,27 +8,11 @@ import { helveticaNeue } from "@/lib/fonts";
 import "./globals.css";
 
 /**
- * Três papéis tipográficos (ver globals.css):
- * display condensada de alto contraste, corpo neutro, mono só para dado
- * operacional. `next/font` faz o self-host — o CSP do projeto trava
- * `font-src 'self'`, então nada é buscado do Google em runtime.
- *
- * "Big Shoulders Display" foi renomeada para "Big Shoulders" no Google Fonts;
- * é a mesma família citada no briefing de marca.
+ * Tipografia oficial: Helvetica Neue LT Std (local) como fonte padrão.
+ * IBM Plex Mono permanece apenas para dados operacionais (horários, datas).
+ * Big Shoulders e Inter foram removidos — a Helvetica Neue substitui ambas
+ * como corpo de texto e títulos em todo o site e painel admin.
  */
-const display = Big_Shoulders({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["700", "800", "900"],
-  display: "swap",
-});
-
-const body = Inter({
-  variable: "--font-body",
-  subsets: ["latin"],
-  display: "swap",
-});
-
 const data = IBM_Plex_Mono({
   variable: "--font-data",
   subsets: ["latin"],
@@ -79,7 +63,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${display.variable} ${body.variable} ${data.variable} ${helveticaNeue.variable} h-full antialiased`}
+      className={`${data.variable} ${helveticaNeue.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning só neste elemento: extensões de navegador
           (ex.: ColorZilla, Grammarly) injetam atributos no <body> antes do
