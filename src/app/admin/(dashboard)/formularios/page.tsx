@@ -5,10 +5,19 @@ import { computeEffectiveStatus } from "@/lib/forms/availability";
 import { FormsListClient } from "@/components/admin/forms/FormsListClient";
 
 export default async function AdminFormsPage() {
-  const [forms, counts] = await Promise.all([
-    getAllForms(),
-    getFormAdminCounts(),
-  ]);
+  let forms: Awaited<ReturnType<typeof getAllForms>> = [];
+  let counts = { total: 0, active: 0, closed: 0, totalSubmissions: 0 };
+  let loadError: string | null = null;
+
+  try {
+    [forms, counts] = await Promise.all([
+      getAllForms(),
+      getFormAdminCounts(),
+    ]);
+  } catch (err) {
+    console.error("Erro ao carregar formulários:", err);
+    loadError = "Falha ao carregar os formulários. Verifique se os índices do Firestore foram publicados.";
+  }
 
   // Calcula status efetivo para cada formulário
   const now = new Date();
@@ -48,6 +57,12 @@ export default async function AdminFormsPage() {
           Novo formulário
         </Link>
       </div>
+
+      {loadError && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm text-red-300">
+          {loadError}
+        </div>
+      )}
 
       <FormsListClient forms={formsWithStatus} />
     </div>
