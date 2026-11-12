@@ -278,17 +278,7 @@ export function FormBuilderClient({ mode, formId, initialData }: FormBuilderProp
 
       {/* Campos dinâmicos */}
       <section className="flex flex-col gap-4 rounded-xl border border-border-subtle bg-surface p-6">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg text-foreground">Campos do formulário</h2>
-          <button
-            type="button"
-            onClick={addField}
-            className="flex items-center gap-2 rounded-lg border border-border-soft px-3 py-1.5 text-xs text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground"
-          >
-            <Plus size={14} />
-            Adicionar campo
-          </button>
-        </div>
+        <h2 className="font-display text-lg text-foreground">Campos do formulário</h2>
 
         <input type="hidden" name="fields" value={serializedFields} />
 
@@ -314,6 +304,17 @@ export function FormBuilderClient({ mode, formId, initialData }: FormBuilderProp
             Adicione pelo menos um campo ao formulário.
           </p>
         )}
+
+        <div className="flex justify-end pt-2">
+          <button
+            type="button"
+            onClick={addField}
+            className="flex items-center gap-2 rounded-lg border border-border-soft px-3 py-1.5 text-xs text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+          >
+            <Plus size={14} />
+            Adicionar campo
+          </button>
+        </div>
       </section>
 
       {/* Disponibilidade */}
