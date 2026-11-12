@@ -4,6 +4,7 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { MotionProvider } from "@/components/providers/MotionProvider";
 import { getUnitInfo } from "@/lib/data";
 import { siteUrl } from "@/lib/site";
+import { helveticaNeue } from "@/lib/fonts";
 import "./globals.css";
 
 /**
@@ -78,7 +79,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${display.variable} ${body.variable} ${data.variable} h-full antialiased`}
+      className={`${display.variable} ${body.variable} ${data.variable} ${helveticaNeue.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning só neste elemento: extensões de navegador
           (ex.: ColorZilla, Grammarly) injetam atributos no <body> antes do

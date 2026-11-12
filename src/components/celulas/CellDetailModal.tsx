@@ -70,12 +70,19 @@ export function CellDetailModal({ cell, onClose }: CellDetailModalProps) {
 
  if (!cell) return null;
 
- const hasRoute =
- cell.publicAddress && cell.latitude != null && cell.longitude != null;
+ // Rota por coordenadas verificadas OU por endereço textual completo autorizado
+ const hasCoords = cell.latitude != null && cell.longitude != null;
+ const hasAddress = !!cell.publicAddress;
+ const hasRoute = hasCoords || hasAddress;
 
- const googleMapsUrl = hasRoute
- ? `https://www.google.com/maps/dir/?api=1&destination=${cell.latitude},${cell.longitude}`
- : null;
+ let googleMapsUrl: string | null = null;
+ if (hasCoords) {
+ googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${cell.latitude},${cell.longitude}`;
+ } else if (hasAddress && cell.city) {
+ // Endereço textual: codifica para URL segura
+ const query = encodeURIComponent(`${cell.publicAddress}, ${cell.neighborhood ?? ""} ${cell.city}`);
+ googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${query}`;
+ }
 
  return (
  <div
