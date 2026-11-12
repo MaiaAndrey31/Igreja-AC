@@ -12,7 +12,14 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
   const session = await getCurrentSession();
   if (!session) redirect("/admin/login");
 
-  const { unreadSubmissions } = await getAdminCounts();
+  let unreadSubmissions = 0;
+  try {
+    const counts = await getAdminCounts();
+    unreadSubmissions = counts.unreadSubmissions;
+  } catch (err) {
+    console.error("Erro ao carregar contadores do admin:", err);
+    // Não bloqueia a renderização do layout se os contadores falharem
+  }
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
