@@ -32,6 +32,10 @@ function parseAnnouncementForm(formData: FormData, imageUrl: string) {
     startDate: formData.get("startDate"),
     endDate: formData.get("endDate") || undefined,
     published: formData.get("published") === "on",
+    // Novos campos do módulo de eventos
+    visualId: formData.get("visualId") ?? "",
+    groupUrl: formData.get("groupUrl") ?? "",
+    confirmationMessage: formData.get("confirmationMessage") ?? "",
   });
 }
 

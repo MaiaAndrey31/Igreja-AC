@@ -167,6 +167,26 @@ export const cellsRaw = () => db().collection("cells");
 // Announcement
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// ScheduledMessage — mensagens programadas vinculadas a um evento/anúncio
+// ---------------------------------------------------------------------------
+
+export type ScheduledMessageRecipient = "inscritos" | "confirmados" | "concluidos";
+export type ScheduledMessageStatus = "draft" | "scheduled" | "sent" | "failed" | "cancelled";
+
+export interface ScheduledMessage {
+  id: string;
+  title: string;
+  message: string;
+  scheduledAt: Date;
+  recipients: ScheduledMessageRecipient[];
+  status: ScheduledMessageStatus;
+}
+
+// ---------------------------------------------------------------------------
+// Announcement — eventos/avisos com identidade visual, integrações e mensagens
+// ---------------------------------------------------------------------------
+
 export interface Announcement {
   id: string;
   title: string;
@@ -177,6 +197,15 @@ export interface Announcement {
   startDate: Date;
   endDate: Date | null;
   published: boolean;
+  // Novos campos do módulo de eventos
+  /** ID visual opcional da organização (não é chave primária). */
+  visualId: string | null;
+  /** Link do grupo WhatsApp/Telegram do evento. */
+  groupUrl: string | null;
+  /** Mensagem personalizada exibida após inscrição confirmada. */
+  confirmationMessage: string | null;
+  /** Mensagens programadas vinculadas ao evento. */
+  scheduledMessages: ScheduledMessage[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -199,6 +228,12 @@ const announcementConverter: FirestoreDataConverter<Announcement> = {
       startDate: toDate(data.startDate),
       endDate: data.endDate ? toDate(data.endDate) : null,
       published: data.published,
+      visualId: data.visualId ?? null,
+      groupUrl: data.groupUrl ?? null,
+      confirmationMessage: data.confirmationMessage ?? null,
+      scheduledMessages: Array.isArray(data.scheduledMessages)
+        ? (data.scheduledMessages as ScheduledMessage[])
+        : [],
       createdAt: toDate(data.createdAt),
       updatedAt: toDate(data.updatedAt),
     };

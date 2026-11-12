@@ -93,6 +93,10 @@ interface AnnouncementFormValues {
   startDate: string;
   endDate: string;
   published: boolean;
+  // Novos campos do módulo de eventos
+  visualId: string;
+  groupUrl: string;
+  confirmationMessage: string;
 }
 
 function toFormValues(editing: AnnouncementItem | null): AnnouncementFormValues {
@@ -104,6 +108,9 @@ function toFormValues(editing: AnnouncementItem | null): AnnouncementFormValues 
     startDate: editing ? toDateInputValue(editing.startDate) : "",
     endDate: editing?.endDate ? toDateInputValue(editing.endDate) : "",
     published: editing?.published ?? true,
+    visualId: (editing as AnnouncementItem & { visualId?: string })?.visualId ?? "",
+    groupUrl: (editing as AnnouncementItem & { groupUrl?: string })?.groupUrl ?? "",
+    confirmationMessage: (editing as AnnouncementItem & { confirmationMessage?: string })?.confirmationMessage ?? "",
   };
 }
 
@@ -191,24 +198,91 @@ function AnnouncementModal({
           </FieldGroup>
         </div>
 
-        <FieldGroup label="Imagem (opcional)" htmlFor="imageFile" hint="JPG, PNG ou WebP, até 8MB.">
-          <Input id="imageFile" name="imageFile" type="file" accept="image/jpeg,image/png,image/webp" />
-        </FieldGroup>
+        {/* Seção: Identidade Visual do Evento */}
+        <div className="flex flex-col gap-4 rounded-lg border border-border-subtle p-4">
+          <h3 className="text-xs font-medium uppercase tracking-[0.15em] text-foreground-subtle">
+            Identidade Visual do Evento
+          </h3>
 
-        <FieldGroup
-          label="Link do vídeo no Instagram (opcional)"
-          htmlFor="instagramUrl"
-          hint="Cole o link do post/reel. Um ícone do Instagram aparece no aviso, levando direto pro vídeo."
-        >
-          <Input
-            id="instagramUrl"
-            name="instagramUrl"
-            type="url"
-            placeholder="https://www.instagram.com/reel/..."
-            value={values.instagramUrl}
-            onChange={(e) => setValues((v) => ({ ...v, instagramUrl: e.target.value }))}
-          />
-        </FieldGroup>
+          <FieldGroup label="Arte de divulgação (opcional)" htmlFor="imageFile" hint="JPG, PNG ou WebP, até 8MB. A imagem aparece na página pública e nos cartões do evento.">
+            <Input id="imageFile" name="imageFile" type="file" accept="image/jpeg,image/png,image/webp" />
+          </FieldGroup>
+
+          <FieldGroup
+            label="ID Visual do Evento (opcional)"
+            htmlFor="visualId"
+            hint="Identificação visual personalizada da organização. Não é a chave primária do sistema."
+          >
+            <Input
+              id="visualId"
+              name="visualId"
+              value={values.visualId}
+              onChange={(e) => setValues((v) => ({ ...v, visualId: e.target.value }))}
+              placeholder="Ex.: EVT-2026-RET-JOVENS"
+              maxLength={60}
+            />
+          </FieldGroup>
+        </div>
+
+        {/* Seção: Integrações e Links */}
+        <div className="flex flex-col gap-4 rounded-lg border border-border-subtle p-4">
+          <h3 className="text-xs font-medium uppercase tracking-[0.15em] text-foreground-subtle">
+            Integrações e Links
+          </h3>
+
+          <FieldGroup
+            label="Link do vídeo no Instagram (opcional)"
+            htmlFor="instagramUrl"
+            hint="Cole o link do post/reel. Um ícone do Instagram aparece no aviso, levando direto pro vídeo."
+          >
+            <Input
+              id="instagramUrl"
+              name="instagramUrl"
+              type="url"
+              placeholder="https://www.instagram.com/reel/..."
+              value={values.instagramUrl}
+              onChange={(e) => setValues((v) => ({ ...v, instagramUrl: e.target.value }))}
+            />
+          </FieldGroup>
+
+          <FieldGroup
+            label="Link do Grupo do Evento (opcional)"
+            htmlFor="groupUrl"
+            hint="WhatsApp (chat.whatsapp.com/...) ou Telegram (t.me/...). Aparece como botão na confirmação da inscrição."
+          >
+            <Input
+              id="groupUrl"
+              name="groupUrl"
+              type="url"
+              placeholder="https://chat.whatsapp.com/... ou https://t.me/..."
+              value={values.groupUrl}
+              onChange={(e) => setValues((v) => ({ ...v, groupUrl: e.target.value }))}
+            />
+          </FieldGroup>
+        </div>
+
+        {/* Seção: Mensagens e Confirmação */}
+        <div className="flex flex-col gap-4 rounded-lg border border-border-subtle p-4">
+          <h3 className="text-xs font-medium uppercase tracking-[0.15em] text-foreground-subtle">
+            Mensagens e Confirmação
+          </h3>
+
+          <FieldGroup
+            label="Mensagem de confirmação personalizada (opcional)"
+            htmlFor="confirmationMessage"
+            hint="Exibida após a inscrição confirmada. Se vazio, usa a mensagem padrão do sistema."
+          >
+            <Textarea
+              id="confirmationMessage"
+              name="confirmationMessage"
+              value={values.confirmationMessage}
+              onChange={(e) => setValues((v) => ({ ...v, confirmationMessage: e.target.value }))}
+              placeholder="Inscrição realizada com sucesso! Entre no grupo do evento pelo botão abaixo para acompanhar as informações e novidades."
+              rows={3}
+              maxLength={1000}
+            />
+          </FieldGroup>
+        </div>
 
         <Switch
           label="Publicado no site"

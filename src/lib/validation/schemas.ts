@@ -54,6 +54,10 @@ export const cellSchema = z.object({
   sourceId: z.string().trim().max(20).nullable().default(null),
 });
 
+// Regex para links de grupo WhatsApp ou Telegram
+const groupUrlRegex =
+  /^https:\/\/(chat\.whatsapp\.com\/[A-Za-z0-9_-]+|t\.me\/[A-Za-z0-9_]+)$/;
+
 export const announcementSchema = z
   .object({
     title: z.string().trim().min(2, "Informe um título.").max(100),
@@ -72,6 +76,19 @@ export const announcementSchema = z
     startDate: z.coerce.date({ message: "Informe a data de início." }),
     endDate: z.coerce.date().optional(),
     published: z.coerce.boolean().default(true),
+    // Novos campos do módulo de eventos
+    visualId: z.string().trim().max(60).optional().or(z.literal("")).nullable(),
+    groupUrl: z
+      .string()
+      .trim()
+      .max(500)
+      .optional()
+      .or(z.literal(""))
+      .nullable()
+      .refine((value) => !value || groupUrlRegex.test(value), {
+        message: "Use um link válido de grupo WhatsApp (chat.whatsapp.com/...) ou Telegram (t.me/...).",
+      }),
+    confirmationMessage: z.string().trim().max(1000).optional().or(z.literal("")).nullable(),
   })
   .refine((data) => !data.endDate || data.endDate >= data.startDate, {
     message: "A data final não pode ser anterior à data de início.",
