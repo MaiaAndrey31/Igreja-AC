@@ -2,19 +2,24 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, MapPin, Clock, Navigation, Filter, X } from "lucide-react";
+import { Search, MapPin, Clock, Filter, X } from "lucide-react";
 import { CellMap, type CellMapMarker } from "@/components/celulas/CellMap";
+import { CellDetailModal, type CellDetailData } from "@/components/celulas/CellDetailModal";
 import { CELL_REGIONS, type CellRegion } from "@/lib/celulas/regions";
 
+/**
+ * Interface pública de dados da célula — NÃO contém leaderName nem campos
+ * administrativos. A serialização no servidor (page.tsx) deve garantir que
+ * apenas estes campos sejam enviados ao navegador.
+ */
 export interface CellLocatorData {
  id: string;
- name: string;
- leaderName: string;
+ /** Nome público da célula (sem nomes de líderes). */
+ publicName: string;
  neighborhood: string;
- address: string;
+ /** Endereço completo — somente se autorizado para publicação. */
+ publicAddress: string | null;
  dayTime: string;
- whatsapp: string;
- logoUrl: string | null;
  region: CellRegion | null;
  profile: string | null;
  city: string | null;
@@ -23,8 +28,6 @@ export interface CellLocatorData {
  meetingTime: string | null;
  latitude: number | null;
  longitude: number | null;
- addressPublic: boolean;
- locationPublic: boolean;
 }
 
 interface CityOption {
@@ -57,7 +60,7 @@ export function CellLocator({ cells }: { cells: CellLocatorData[] }) {
  const [selectedProfile, setSelectedProfile] = useState<string>("all");
  const [selectedDay, setSelectedDay] = useState<string>("all");
  const [searchText, setSearchText] = useState("");
- const [selectedCellId, setSelectedCellId] = useState<string | null>(null);
+ const [modalCellId, setModalCellId] = useState<string | null>(null);
 
  // Cidades disponíveis derivadas dos dados
  const cities: CityOption[] = useMemo(() => {
@@ -85,10 +88,9 @@ export function CellLocator({ cells }: { cells: CellLocatorData[] }) {
  if (selectedDay !== "all" && cell.meetingDay !== selectedDay) return false;
  if (searchText) {
  const lower = searchText.toLowerCase();
- const matchesName = cell.name.toLowerCase().includes(lower);
+ const matchesName = cell.publicName.toLowerCase().includes(lower);
  const matchesNeighborhood = cell.neighborhood?.toLowerCase().includes(lower);
- const matchesLeader = cell.leaderName?.toLowerCase().includes(lower);
- if (!matchesName && !matchesNeighborhood && !matchesLeader) return false;
+ if (!matchesName && !matchesNeighborhood) return false;
  }
  return true;
  });
@@ -97,20 +99,20 @@ export function CellLocator({ cells }: { cells: CellLocatorData[] }) {
  // Marcadores para o mapa (apenas células com coordenadas verificadas e localização pública)
  const mapMarkers: CellMapMarker[] = useMemo(() => {
  return filteredCells
- .filter((c) => c.latitude != null && c.longitude != null && c.locationPublic)
+ .filter((c) => c.latitude != null && c.longitude != null)
  .map((c) => ({
  id: c.id,
- name: c.name,
+ name: c.publicName,
  region: c.region,
  neighborhood: c.neighborhood,
- address: c.address,
+ address: c.publicAddress ?? "",
  dayTime: c.dayTime,
  profile: c.profile,
  latitude: c.latitude!,
  longitude: c.longitude!,
- addressPublic: c.addressPublic,
- locationPublic: c.locationPublic,
- whatsapp: c.whatsapp,
+ addressPublic: c.publicAddress != null,
+ locationPublic: true,
+ whatsapp: "",
  }));
  }, [filteredCells]);
 
@@ -140,7 +142,7 @@ export function CellLocator({ cells }: { cells: CellLocatorData[] }) {
  const handleCityChange = useCallback(
  (slug: string) => {
  setSelectedCity(slug);
- setSelectedCellId(null);
+ setModalCellId(null);
  setSelectedRegion("all");
  setSelectedProfile("all");
  setSelectedDay("all");
@@ -150,12 +152,34 @@ export function CellLocator({ cells }: { cells: CellLocatorData[] }) {
  [router]
  );
 
- const handleSelectCell = useCallback((id: string) => {
- setSelectedCellId(id);
- // Scroll suave até o card na lista
- const el = document.getElementById(`cell-card-${id}`);
- if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+ const handleOpenModal = useCallback((id: string) => {
+ setModalCellId(id);
  }, []);
+
+ const handleCloseModal = useCallback(() => {
+ setModalCellId(null);
+ }, []);
+
+ // Dados da célula selecionada para o modal
+ const modalCell: CellDetailData | null = useMemo(() => {
+ if (!modalCellId) return null;
+ const cell = filteredCells.find((c) => c.id === modalCellId);
+ if (!cell) return null;
+ return {
+ id: cell.id,
+ publicName: cell.publicName,
+ region: cell.region,
+ profile: cell.profile,
+ meetingDay: cell.meetingDay,
+ meetingTime: cell.meetingTime,
+ dayTime: cell.dayTime,
+ neighborhood: cell.neighborhood,
+ city: cell.city,
+ publicAddress: cell.publicAddress,
+ latitude: cell.latitude,
+ longitude: cell.longitude,
+ };
+ }, [modalCellId, filteredCells]);
 
  const clearFilters = () => {
  setSelectedRegion("all");
@@ -279,12 +303,28 @@ export function CellLocator({ cells }: { cells: CellLocatorData[] }) {
  markers={mapMarkers}
  center={mapCenter}
  zoom={13}
- selectedCellId={selectedCellId}
- onSelectCell={handleSelectCell}
+ selectedCellId={modalCellId}
+ onSelectCell={handleOpenModal}
  />
  ) : (
- <div className="flex h-[300px] items-center justify-center rounded-xl border border-border-subtle bg-surface text-sm text-foreground-subtle">
- Nenhuma célula com localização verificada nesta cidade.
+ <div className="relative h-[300px] overflow-hidden rounded-xl border border-border-subtle bg-surface">
+ {/* Mapa centralizado na cidade como fundo visual */}
+ <div className="absolute inset-0 opacity-40">
+ <CellMap
+ markers={[]}
+ center={mapCenter}
+ zoom={12}
+ selectedCellId={null}
+ onSelectCell={() => {}}
+ className="!h-full !w-full !border-0"
+ />
+ </div>
+ {/* Mensagem informativa sobreposta */}
+ <div className="absolute inset-0 flex items-center justify-center">
+ <p className="max-w-md px-6 text-center text-sm text-foreground-muted">
+ As localizações das células estão sendo atualizadas. Você pode consultar as informações na lista abaixo.
+ </p>
+ </div>
  </div>
  )}
 
@@ -304,11 +344,20 @@ export function CellLocator({ cells }: { cells: CellLocatorData[] }) {
  <div
  key={cell.id}
  id={`cell-card-${cell.id}`}
- onClick={() => handleSelectCell(cell.id)}
- className={`cursor-pointer rounded-xl border p-5 transition-all ${
- selectedCellId === cell.id
+ role="button"
+ tabIndex={0}
+ onClick={() => handleOpenModal(cell.id)}
+ onKeyDown={(e) => {
+ if (e.key === "Enter" || e.key === " ") {
+ e.preventDefault();
+ handleOpenModal(cell.id);
+ }
+ }}
+ aria-label={`Ver detalhes da célula ${cell.publicName}`}
+ className={`cursor-pointer rounded-xl border p-5 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+ modalCellId === cell.id
  ? "border-accent bg-accent/5 shadow-md"
- : "border-border-subtle bg-surface hover:border-accent/50"
+ : "border-border-subtle bg-surface hover:border-accent/50 hover:shadow-sm"
  }`}
  >
  {/* Região badge */}
@@ -321,7 +370,7 @@ export function CellLocator({ cells }: { cells: CellLocatorData[] }) {
  </span>
  )}
 
- <h3 className="font-display text-lg tracking-wide text-foreground">{cell.name}</h3>
+ <h3 className="font-display text-lg tracking-wide text-foreground">{cell.publicName}</h3>
 
  {cell.profile && (
  <p className="mt-1 text-[11px] uppercase tracking-wider text-foreground-subtle">{cell.profile}</p>
@@ -336,34 +385,6 @@ export function CellLocator({ cells }: { cells: CellLocatorData[] }) {
  <MapPin size={12} className="shrink-0 text-foreground-subtle" />
  {cell.neighborhood || "Bairro não informado"}
  </span>
- {cell.addressPublic && cell.address && (
- <span className="truncate pl-5 text-foreground-subtle">{cell.address}</span>
- )}
- </div>
-
- {/* Ações */}
- <div className="mt-4 flex gap-2">
- {cell.latitude != null && cell.longitude != null && cell.locationPublic && (
- <a
- href={`https://www.google.com/maps/dir/?api=1&destination=${cell.latitude},${cell.longitude}`}
- target="_blank"
- rel="noopener noreferrer"
- className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border-soft py-2 text-[10px] uppercase tracking-[0.1em] text-foreground transition-colors hover:border-accent hover:text-accent"
- >
- <Navigation size={12} />
- Como chegar
- </a>
- )}
- {cell.whatsapp && (
- <a
- href={`https://wa.me/${cell.whatsapp}?text=${encodeURIComponent(`Olá, vi a célula ${cell.name} no site e gostaria de saber mais.`)}`}
- target="_blank"
- rel="noopener noreferrer"
- className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border-soft py-2 text-[10px] uppercase tracking-[0.1em] text-foreground transition-colors hover:border-accent hover:text-accent"
- >
- WhatsApp
- </a>
- )}
  </div>
  </div>
  ))}
@@ -374,6 +395,9 @@ export function CellLocator({ cells }: { cells: CellLocatorData[] }) {
  Nenhuma célula encontrada com os filtros selecionados.
  </div>
  )}
+
+ {/* Modal de detalhes */}
+ <CellDetailModal cell={modalCell} onClose={handleCloseModal} />
  </div>
  );
 }
