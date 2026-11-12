@@ -35,7 +35,23 @@ export const cellSchema = z.object({
     .regex(whatsappRegex, "Use o formato DDI+DDD+número, só dígitos (ex.: 5547999999999)."),
   logoUrl: z.string().trim().max(500).optional().or(z.literal("")),
   active: z.coerce.boolean().default(true),
+  published: z.coerce.boolean().default(false),
   order: z.coerce.number().int().min(0).default(0),
+  // Novos campos do localizador de células
+  region: z.enum(["vermelha", "verde", "amarela", "azul", "laranja"]).nullable().default(null),
+  profile: z.string().trim().max(100).nullable().default(null),
+  city: z.string().trim().max(80).nullable().default(null),
+  citySlug: z.string().trim().max(80).nullable().default(null),
+  sedeId: z.string().trim().max(100).nullable().default(null),
+  meetingDay: z.string().trim().max(40).nullable().default(null),
+  meetingTime: z.string().trim().max(20).nullable().default(null),
+  latitude: z.coerce.number().min(-90).max(90).nullable().default(null),
+  longitude: z.coerce.number().min(-180).max(180).nullable().default(null),
+  geocodeStatus: z.enum(["verified", "pending", "failed", "manual"]).default("pending"),
+  reviewStatus: z.enum(["ok", "needs_review"]).default("ok"),
+  addressPublic: z.coerce.boolean().default(false),
+  locationPublic: z.coerce.boolean().default(false),
+  sourceId: z.string().trim().max(20).nullable().default(null),
 });
 
 export const announcementSchema = z

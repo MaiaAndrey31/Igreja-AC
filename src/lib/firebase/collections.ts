@@ -71,6 +71,23 @@ export const ministriesRaw = () => db().collection("ministries");
 // Cell
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Cell — tipos re-exportados do módulo isomorfo src/lib/celulas/regions.ts
+// para manter compatibilidade com imports existentes no server-side.
+// Componentes client devem importar diretamente de @/lib/celulas/regions.
+// ---------------------------------------------------------------------------
+
+export { CELL_REGIONS } from "@/lib/celulas/regions";
+
+import type {
+  CellRegion,
+  CellProfile,
+  GeocodeStatus,
+  ReviewStatus,
+} from "@/lib/celulas/regions";
+
+export type { CellRegion, CellProfile, GeocodeStatus, ReviewStatus };
+
 export interface Cell {
   id: string;
   name: string;
@@ -81,7 +98,23 @@ export interface Cell {
   whatsapp: string;
   logoUrl: string | null;
   active: boolean;
+  published: boolean;
   order: number;
+  // Novos campos do localizador de células
+  region: CellRegion | null;
+  profile: CellProfile | null;
+  city: string | null;
+  citySlug: string | null;
+  sedeId: string | null;
+  meetingDay: string | null;
+  meetingTime: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  geocodeStatus: GeocodeStatus;
+  reviewStatus: ReviewStatus;
+  addressPublic: boolean;
+  locationPublic: boolean;
+  sourceId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -97,14 +130,29 @@ const cellConverter: FirestoreDataConverter<Cell> = {
     return {
       id: snap.id,
       name: data.name,
-      leaderName: data.leaderName,
-      neighborhood: data.neighborhood,
-      address: data.address,
-      dayTime: data.dayTime,
-      whatsapp: data.whatsapp,
+      leaderName: data.leaderName ?? "",
+      neighborhood: data.neighborhood ?? "",
+      address: data.address ?? "",
+      dayTime: data.dayTime ?? "",
+      whatsapp: data.whatsapp ?? "",
       logoUrl: data.logoUrl ?? null,
-      active: data.active,
-      order: data.order,
+      active: data.active ?? true,
+      published: data.published ?? false,
+      order: data.order ?? 0,
+      region: data.region ?? null,
+      profile: data.profile ?? null,
+      city: data.city ?? null,
+      citySlug: data.citySlug ?? null,
+      sedeId: data.sedeId ?? null,
+      meetingDay: data.meetingDay ?? null,
+      meetingTime: data.meetingTime ?? null,
+      latitude: data.latitude ?? null,
+      longitude: data.longitude ?? null,
+      geocodeStatus: data.geocodeStatus ?? "pending",
+      reviewStatus: data.reviewStatus ?? "ok",
+      addressPublic: data.addressPublic ?? false,
+      locationPublic: data.locationPublic ?? false,
+      sourceId: data.sourceId ?? null,
       createdAt: toDate(data.createdAt),
       updatedAt: toDate(data.updatedAt),
     };

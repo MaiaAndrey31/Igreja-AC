@@ -2,110 +2,130 @@ rules_version = '2';
 
 // Regras do Firestore — Igreja Amor e Cuidado.
 //
-// Arquitetura deste projeto: só o servidor (Server Actions do Next.js, via
-// Firebase Admin SDK) fala com o Firestore. O navegador NUNCA acessa o banco
-// diretamente — nem o site público, nem o painel /admin. Toda leitura e toda
-// escrita passam primeiro pela validação e pela checagem de sessão do
-// próprio Next.js (ver requireAdminSession em src/lib/auth/session.ts).
+// Arquitetura: o site usa Firebase Admin SDK no servidor (Next.js Server
+// Actions/Components) para todas as escritas e para a maioria das leituras.
+// Estas regras existem como defesa em profundidade E para permitir leitura
+// pública direta via Client SDK quando necessário (ex.: futuras integrações
+// em tempo real).
 //
-// O Admin SDK ignora estas regras por completo — elas nunca entram em jogo
-// no caminho normal de uso do site. Elas existem como DEFESA EM PROFUNDIDADE:
-// se um dia alguém apontar o SDK de cliente do Firebase direto para este
-// projeto (por engano ou por má intenção), a regra abaixo barra qualquer
-// leitura ou escrita.
+// O Admin SDK ignora estas regras por completo — quem controla o acesso real
+// são as Server Actions via requireAdminSession() (src/lib/auth/session.ts).
 //
-// Se no futuro vocês quiserem que o site leia dados direto do Firestore pelo
-// navegador (ex.: atualização em tempo real de Avisos sem precisar recarregar
-// a página), troque o bloco "COMO ESTÁ HOJE" pelo bloco comentado
-// "CRESCIMENTO FUTURO" abaixo — ele já libera leitura pública do conteúdo
-// publicado e mantém a escrita restrita a quem tem a claim "admin" (definida
-// em scripts/create-admin.ts, via Firebase Authentication).
+// IMPORTANTE: As coleções forms, formSubmissions (subcoleção),
+// dynamicFormRateLimit e unitInfo NÃO têm regras de leitura pública porque
+// contêm dados sensíveis (respostas de formulários, rate limits, dados da
+// unidade). Elas só são acessíveis via Admin SDK no servidor.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ---------------------------------------------------------------------
-    // COMO ESTÁ HOJE: nega toda leitura e escrita vinda de SDK de cliente.
-    // ---------------------------------------------------------------------
-    match /{document=**} {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    // -----------------------------------------------------------------------
+    // Coleções com leitura pública (conteúdo publicado/ativo do site)
+    // -----------------------------------------------------------------------
+
+    match /ministries/{id} {
+      allow read: if resource.data.published == true;
+      allow write: if isAdmin();
+    }
+
+    match /cells/{id} {
+      allow read: if resource.data.active == true;
+      allow write: if isAdmin();
+    }
+
+    match /announcements/{id} {
+      allow read: if resource.data.published == true;
+      allow write: if isAdmin();
+    }
+
+    match /gallery/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /leaders/{id} {
+      allow read: if resource.data.active == true;
+      allow write: if isAdmin();
+    }
+
+    match /messages/{id} {
+      allow read: if resource.data.published == true;
+      allow write: if isAdmin();
+    }
+
+    match /socialLinks/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /services/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // -----------------------------------------------------------------------
+    // Configurações do site (leitura pública, escrita admin)
+    // -----------------------------------------------------------------------
+
+    match /settings/site {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /settings/unit {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Documento único de informações da unidade (legacy path)
+    match /unitInfo/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // -----------------------------------------------------------------------
+    // Formulários dinâmicos — leitura pública apenas do formulário publicado
+    // (não das submissões/respostas)
+    // -----------------------------------------------------------------------
+
+    match /forms/{formId} {
+      allow read: if resource.data.adminStatus == "published";
+      allow write: if isAdmin();
+
+      // Submissões: somente admin pode ler/escrever (dados pessoais/LGPD)
+      match /submissions/{submissionId} {
+        allow read, write: if isAdmin();
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // Envios do formulário público legado (contato geral)
+    // -----------------------------------------------------------------------
+
+    match /formSubmissions/{id} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // -----------------------------------------------------------------------
+    // Segurança interna — NUNCA acessível via Client SDK
+    // -----------------------------------------------------------------------
+
+    // Contadores de força bruta e rate limiting
+    match /adminSecurity/{email} {
       allow read, write: if false;
     }
 
-    // ---------------------------------------------------------------------
-    // CRESCIMENTO FUTURO (desativado — remova o bloco acima e descomente
-    // este para habilitar leitura pública em tempo real pelo navegador):
-    // ---------------------------------------------------------------------
-    //
-    // function isAdmin() {
-    //   return request.auth != null && request.auth.token.admin == true;
-    // }
-    //
-    // match /ministries/{id} {
-    //   allow read: if resource.data.published == true;
-    //   allow write: if isAdmin();
-    // }
-    //
-    // match /cells/{id} {
-    //   allow read: if resource.data.active == true;
-    //   allow write: if isAdmin();
-    // }
-    //
-    // match /announcements/{id} {
-    //   allow read: if resource.data.published == true;
-    //   allow write: if isAdmin();
-    // }
-    //
-    // match /gallery/{id} {
-    //   allow read: if true;
-    //   allow write: if isAdmin();
-    // }
-    //
-    // match /settings/site {
-    //   allow read: if true;
-    //   allow write: if isAdmin();
-    // }
-    //
-    // match /settings/unit {
-    //   allow read: if true;
-    //   allow write: if isAdmin();
-    // }
-    //
-    // match /leaders/{id} {
-    //   allow read: if resource.data.active == true;
-    //   allow write: if isAdmin();
-    // }
-    //
-    // match /messages/{id} {
-    //   allow read: if resource.data.published == true;
-    //   allow write: if isAdmin();
-    // }
-    //
-    // match /socialLinks/{id} {
-    //   allow read: if true;
-    //   allow write: if isAdmin();
-    // }
-    //
-    // match /services/{id} {
-    //   allow read: if true;
-    //   allow write: if isAdmin();
-    // }
-    //
-    // // Envios públicos (célula/decisão/testemunho/oração): qualquer um pode
-    // // criar, ninguém além do admin lê ou muda status — a leitura da caixa
-    // // de entrada é só para o painel.
-    // match /formSubmissions/{id} {
-    //   allow create: if true;
-    //   allow read, update, delete: if isAdmin();
-    // }
-    //
-    // // Nunca legível/gravável por cliente, mesmo no modo "crescimento
-    // // futuro" — são contadores internos de força bruta (adminSecurity) e de
-    // // limite de envios do formulário público (formRateLimit).
-    // match /adminSecurity/{email} {
-    //   allow read, write: if false;
-    // }
-    // match /formRateLimit/{key} {
-    //   allow read, write: if false;
-    // }
+    match /formRateLimit/{key} {
+      allow read, write: if false;
+    }
+
+    match /dynamicFormRateLimit/{key} {
+      allow read, write: if false;
+    }
   }
 }

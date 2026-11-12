@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useCallback } from "react";
+import { useActionState, useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -186,13 +186,25 @@ export function FormBuilderClient({ mode, formId, initialData }: FormBuilderProp
   // Serializa os campos como JSON para enviar via FormData
   const serializedFields = JSON.stringify(fields);
 
-  // Toast de sucesso
-  if (state.success) {
-    push(mode === "create" ? "Formulário criado." : "Formulário atualizado.");
-    if (mode === "create") {
-      router.push("/admin/formularios");
+  // Evita envio duplicado: rastreia se já processamos um sucesso anterior
+  const successHandledRef = useRef(false);
+
+  // Redirecionamento e toast em useEffect — NUNCA durante a renderização,
+  // pois router.push() dentro do render causa crash no Next.js 16 / React 19
+  // ("Cannot update during render"). O ref evita re-executar em re-renders.
+  useEffect(() => {
+    if (state.success && !successHandledRef.current) {
+      successHandledRef.current = true;
+      push(mode === "create" ? "Formulário criado." : "Formulário atualizado.");
+      if (mode === "create") {
+        router.push("/admin/formularios");
+      }
     }
-  }
+    // Reseta quando o state muda (ex.: novo submit falha após sucesso anterior)
+    if (!state.success) {
+      successHandledRef.current = false;
+    }
+  }, [state.success, mode, push, router]);
 
   return (
     <form action={formAction} className="flex flex-col gap-8">

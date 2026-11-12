@@ -1,11 +1,18 @@
 {
   "indexes": [
     {
-      "collectionGroup": "ministries",
+      "collectionGroup": "announcements",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "published", "order": "ASCENDING" },
-        { "fieldPath": "highlight", "order": "DESCENDING" },
+        { "fieldPath": "startDate", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "cells",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "neighborhood", "order": "ASCENDING" },
         { "fieldPath": "order", "order": "ASCENDING" }
       ]
     },
@@ -16,22 +23,6 @@
         { "fieldPath": "active", "order": "ASCENDING" },
         { "fieldPath": "neighborhood", "order": "ASCENDING" },
         { "fieldPath": "order", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "cells",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "neighborhood", "order": "ASCENDING" },
-        { "fieldPath": "order", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "announcements",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "published", "order": "ASCENDING" },
-        { "fieldPath": "startDate", "order": "ASCENDING" }
       ]
     },
     {
@@ -59,26 +50,20 @@
       ]
     },
     {
+      "collectionGroup": "ministries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "published", "order": "ASCENDING" },
+        { "fieldPath": "highlight", "order": "DESCENDING" },
+        { "fieldPath": "order", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "services",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "weekday", "order": "ASCENDING" },
         { "fieldPath": "order", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "forms",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "adminStatus", "order": "ASCENDING" },
-        { "fieldPath": "slug", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "forms",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "updatedAt", "order": "DESCENDING" }
       ]
     }
   ],
