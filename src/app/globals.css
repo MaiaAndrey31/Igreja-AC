@@ -88,10 +88,11 @@
   --color-ink: var(--ac-ink);
   --color-paper: var(--ac-paper);
 
-  /* Três papéis tipográficos. Display e corpo carregam a voz; a mono é
-     reservada a dado operacional (horário, data, endereço) — a troca de
-     família é o que sinaliza "isto é informação real, não decoração". */
-  --font-sans: var(--font-body);
+  /* Tipografia oficial: Helvetica Neue LT Std como fonte padrão do projeto.
+     Display (Big Shoulders) mantém seu papel em títulos decorativos; a mono
+     é reservada a dado operacional (horário, data, endereço). A Helvetica
+     Neue substitui a Inter como corpo de texto em todo o site e painel admin. */
+  --font-sans: var(--font-helvetica-neue), var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-display);
   --font-mono: var(--font-data);
 }
@@ -103,9 +104,15 @@ html {
 body {
   background: var(--ac-ink);
   color: var(--foreground-muted);
-  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Garante que controles de formulário herdem a fonte Helvetica Neue LT Std
+   em vez de usarem a fonte padrão do sistema operacional. */
+input, select, textarea, button {
+  font-family: inherit;
 }
 
 ::selection {
