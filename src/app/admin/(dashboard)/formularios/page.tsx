@@ -5,18 +5,26 @@ import { computeEffectiveStatus } from "@/lib/forms/availability";
 import { FormsListClient } from "@/components/admin/forms/FormsListClient";
 
 export default async function AdminFormsPage() {
+  console.info("[admin/formularios] iniciando carregamento");
+
   let forms: Awaited<ReturnType<typeof getAllForms>> = [];
   let counts = { total: 0, active: 0, closed: 0, totalSubmissions: 0 };
   let loadError: string | null = null;
 
   try {
+    console.info("[admin/formularios] iniciando consultas ao Firestore");
     [forms, counts] = await Promise.all([
       getAllForms(),
       getFormAdminCounts(),
     ]);
+    console.info("[admin/formularios] consultas concluídas com sucesso, formulários:", forms.length);
   } catch (err) {
-    console.error("Erro ao carregar formulários:", err);
-    loadError = "Falha ao carregar os formulários. Verifique se os índices do Firestore foram publicados.";
+    console.error("[admin/formularios] ERRO nas consultas:", {
+      name: (err as Error)?.name,
+      message: (err as Error)?.message,
+      stack: (err as Error)?.stack?.split("\n").slice(0, 5),
+    });
+    loadError = "Falha ao carregar os formulários. Verifique os Runtime Logs da Vercel para detalhes.";
   }
 
   // Calcula status efetivo para cada formulário
