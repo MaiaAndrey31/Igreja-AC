@@ -11,7 +11,7 @@ import {
   XCircle,
   Users,
 } from "lucide-react";
-import type { DynamicForm, FormEffectiveStatus } from "@/lib/forms/types";
+import type { FormEffectiveStatus, AvailabilityMode } from "@/lib/forms/types";
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { useToast } from "@/components/ui/Toast";
 import {
@@ -19,7 +19,29 @@ import {
   toggleFormStatusAction,
 } from "@/actions/forms";
 
-interface FormListItem extends DynamicForm {
+/**
+ * DTO serializado recebido do Server Component.
+ * Datas são strings ISO (não Date/Timestamp) para compatibilidade com RSC.
+ */
+interface FormListItem {
+  id: string;
+  title: string;
+  description: string;
+  slug: string;
+  purpose: string;
+  adminStatus: "draft" | "published" | "archived";
+  submissionCount: number;
+  maxSubmissions: number | null;
+  showRemainingSlots: boolean;
+  createdAt: string;
+  updatedAt: string;
+  availability: {
+    mode: AvailabilityMode;
+    opensAt: string | null;
+    closesAt: string | null;
+    durationHours?: number | null;
+    activatedAt: string | null;
+  };
   effectiveStatus: FormEffectiveStatus;
 }
 

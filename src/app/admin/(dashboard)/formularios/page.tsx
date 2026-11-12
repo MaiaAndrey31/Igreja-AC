@@ -3,6 +3,48 @@ import { Plus } from "lucide-react";
 import { getAllForms, getFormAdminCounts } from "@/lib/adminData";
 import { computeEffectiveStatus } from "@/lib/forms/availability";
 import { FormsListClient } from "@/components/admin/forms/FormsListClient";
+import type { DynamicForm, FormEffectiveStatus } from "@/lib/forms/types";
+
+/**
+ * Serializa valores de data para strings ISO 8601, garantindo compatibilidade
+ * com a passagem de dados entre Server Components e Client Components.
+ *
+ * O React Server Components não suporta instâncias de Firestore Timestamp
+ * (objetos com _seconds/_nanoseconds) nem Date objects em props de Client
+ * Components. Esta função converte ambos para strings ISO seguras.
+ */
+function serializeDate(value: unknown): string | null {
+  if (value == null) return null;
+  if (value instanceof Date) return value.toISOString();
+  if (
+    typeof value === "object" &&
+    "toDate" in value &&
+    typeof (value as { toDate: () => Date }).toDate === "function"
+  ) {
+    return (value as { toDate: () => Date }).toDate().toISOString();
+  }
+  return null;
+}
+
+/**
+ * Cria um DTO serializável do formulário para passagem segura ao Client Component.
+ * Converte todos os campos de data (incluindo os aninhados em `availability`)
+ * para strings ISO, eliminando instâncias de Timestamp/Date que causam o erro
+ * React #441 ("Only plain objects can be passed to Client Components").
+ */
+function serializeFormForClient(form: DynamicForm & { effectiveStatus: FormEffectiveStatus }) {
+  return {
+    ...form,
+    createdAt: serializeDate(form.createdAt) ?? "",
+    updatedAt: serializeDate(form.updatedAt) ?? "",
+    availability: {
+      ...form.availability,
+      opensAt: serializeDate(form.availability.opensAt),
+      closesAt: serializeDate(form.availability.closesAt),
+      activatedAt: serializeDate(form.availability.activatedAt),
+    },
+  };
+}
 
 export default async function AdminFormsPage() {
   console.info("[admin/formularios] iniciando carregamento");
@@ -27,20 +69,23 @@ export default async function AdminFormsPage() {
     loadError = "Falha ao carregar os formulários. Verifique os Runtime Logs da Vercel para detalhes.";
   }
 
-  // Calcula status efetivo para cada formulário
+  // Calcula status efetivo e serializa datas para strings ISO (seguro para Client Components)
   const now = new Date();
-  const formsWithStatus = forms.map((form) => ({
-    ...form,
-    effectiveStatus: computeEffectiveStatus(
-      {
-        adminStatus: form.adminStatus,
-        availability: form.availability,
-        submissionCount: form.submissionCount,
-        maxSubmissions: form.maxSubmissions,
-      },
-      now
-    ),
-  }));
+  const formsWithStatus = forms.map((form) => {
+    const withStatus = {
+      ...form,
+      effectiveStatus: computeEffectiveStatus(
+        {
+          adminStatus: form.adminStatus,
+          availability: form.availability,
+          submissionCount: form.submissionCount,
+          maxSubmissions: form.maxSubmissions,
+        },
+        now
+      ),
+    };
+    return serializeFormForClient(withStatus);
+  });
 
   return (
     <div className="flex flex-col gap-8">
