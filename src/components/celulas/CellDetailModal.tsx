@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 import { X, MapPin, Clock, Navigation, Calendar } from "lucide-react";
 import { CELL_REGIONS, type CellRegion } from "@/lib/celulas/regions";
 
@@ -111,6 +112,18 @@ export function CellDetailModal({ cell, onClose }: CellDetailModalProps) {
  </button>
 
  <div className="flex flex-col gap-5 p-6 sm:p-8">
+ {/* Logo da igreja */}
+ <div className="flex justify-center pb-2">
+ <Image
+ src="/assets/brand/BrancaHorizontal.png"
+ alt="Igreja Amor e Cuidado"
+ width={200}
+ height={50}
+ className="h-auto w-44 sm:w-52"
+ priority={false}
+ />
+ </div>
+
  {/* Região badge */}
  {cell.region && (
  <span
