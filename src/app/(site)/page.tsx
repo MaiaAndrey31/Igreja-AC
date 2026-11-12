@@ -69,7 +69,7 @@ export default async function Home() {
 
       <OurStory unit={unit} />
       <NextService unit={unit} services={services} />
-      <CellReach unit={unit} cells={cells} />
+      <CellReach unit={unit} />
       <Leadership leaders={leaders} />
       <LatestMessages messages={messages} instagramHref={instagramHref} />
       <MinistriesIndex ministries={ministries} />
