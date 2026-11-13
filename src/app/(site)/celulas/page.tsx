@@ -39,10 +39,10 @@ function derivePublicName(name: string): string {
  * SEGURANÇA: leaderName, whatsapp, logoUrl, sourceId e outros campos
  * administrativos NÃO são enviados ao navegador.
  *
- * REGRA DE VISIBILIDADE DO ENDEREÇO: a publicação da célula (active && published)
- * é a autorização explícita para divulgar rua, número, bairro e cidade.
- * O campo addressPublic foi descontinuado para exibição textual — coordenadas
- * no mapa continuam dependendo de locationPublic.
+ * REGRA DE VISIBILIDADE DO ENDEREÇO: toda célula ativa disponibilizada no
+ * site apresenta seu endereço textual completo. A exibição do endereço NÃO
+ * depende de published, addressPublic, locationPublic nem coordenadas.
+ * Coordenadas no mapa continuam dependendo de locationPublic.
  */
 function toPublicCell(cell: {
  id: string;
@@ -66,15 +66,12 @@ function toPublicCell(cell: {
  addressPublic: boolean;
  locationPublic: boolean;
 }): CellLocatorData {
- // Célula pública = ativa E publicada → endereço textual sempre disponível
- const isPublicCell = cell.active && cell.published;
-
  return {
  id: cell.id,
  publicName: derivePublicName(cell.name),
  neighborhood: cell.neighborhood,
- // Endereço completo quando a célula está ativa e publicada
- address: isPublicCell && cell.address ? cell.address : null,
+ // Endereço textual sempre disponível para células ativas
+ address: cell.address?.trim() || null,
  dayTime: cell.dayTime,
  region: cell.region as CellLocatorData["region"],
  profile: cell.profile,
