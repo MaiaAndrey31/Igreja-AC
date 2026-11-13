@@ -251,36 +251,29 @@ function CellModal({ open, onClose, editing }: { open: boolean; onClose: () => v
           onChange={(e) => setValues((v) => ({ ...v, active: e.target.checked }))}
         />
 
-        <Switch
-          label="Publicar no site"
-          name="published"
-          id="published"
-          checked={values.published}
-          onChange={(e) => setValues((v) => ({ ...v, published: e.target.checked }))}
-        />
-
-        <div className="rounded-lg border border-border-subtle p-4">
-          <p className="mb-3 text-xs font-medium uppercase tracking-[0.15em] text-foreground-subtle">
-            Privacidade do endereço
+        <div className="flex flex-col gap-2">
+          <Switch
+            label="Publicar no site"
+            name="published"
+            id="published"
+            checked={values.published}
+            onChange={(e) => setValues((v) => ({ ...v, published: e.target.checked }))}
+          />
+          <p className="text-[11px] leading-relaxed text-foreground-subtle">
+            Ao publicar esta célula, seu endereço completo (rua, número, bairro e cidade) será exibido para os visitantes. Confirme que o líder autorizou a divulgação antes de ativar.
           </p>
-          <div className="flex flex-col gap-3">
-            <Switch
-              label="Divulgar endereço completo no site"
-              name="addressPublic"
-              id="addressPublic"
-              checked={values.addressPublic}
-              onChange={(e) => setValues((v) => ({ ...v, addressPublic: e.target.checked }))}
-            />
-            <Switch
-              label="Divulgar localização exata no mapa"
-              name="locationPublic"
-              id="locationPublic"
-              checked={values.locationPublic}
-              onChange={(e) => setValues((v) => ({ ...v, locationPublic: e.target.checked }))}
-            />
-          </div>
-          <p className="mt-2 text-[11px] text-foreground-subtle">
-            Algumas reuniões acontecem em residências. Ative somente quando o líder autorizar a divulgação pública.
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Switch
+            label="Divulgar localização exata no mapa"
+            name="locationPublic"
+            id="locationPublic"
+            checked={values.locationPublic}
+            onChange={(e) => setValues((v) => ({ ...v, locationPublic: e.target.checked }))}
+          />
+          <p className="text-[11px] text-foreground-subtle">
+            Exibe um marcador com as coordenadas verificadas no mapa interativo. Independente da publicação do endereço textual.
           </p>
         </div>
 

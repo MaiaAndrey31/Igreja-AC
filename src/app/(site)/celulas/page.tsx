@@ -37,8 +37,12 @@ function derivePublicName(name: string): string {
  * Serializa os dados da célula para o payload público.
  *
  * SEGURANÇA: leaderName, whatsapp, logoUrl, sourceId e outros campos
- * administrativos NÃO são enviados ao navegador. O endereço completo só é
- * incluído quando addressPublic === true.
+ * administrativos NÃO são enviados ao navegador.
+ *
+ * REGRA DE VISIBILIDADE DO ENDEREÇO: a publicação da célula (active && published)
+ * é a autorização explícita para divulgar rua, número, bairro e cidade.
+ * O campo addressPublic foi descontinuado para exibição textual — coordenadas
+ * no mapa continuam dependendo de locationPublic.
  */
 function toPublicCell(cell: {
  id: string;
@@ -57,15 +61,20 @@ function toPublicCell(cell: {
  meetingTime: string | null;
  latitude: number | null;
  longitude: number | null;
+ active: boolean;
+ published: boolean;
  addressPublic: boolean;
  locationPublic: boolean;
 }): CellLocatorData {
+ // Célula pública = ativa E publicada → endereço textual sempre disponível
+ const isPublicCell = cell.active && cell.published;
+
  return {
  id: cell.id,
  publicName: derivePublicName(cell.name),
  neighborhood: cell.neighborhood,
- // Endereço completo SOMENTE se autorizado para publicação
- publicAddress: cell.addressPublic ? cell.address : null,
+ // Endereço completo quando a célula está ativa e publicada
+ publicAddress: isPublicCell && cell.address ? cell.address : null,
  dayTime: cell.dayTime,
  region: cell.region as CellLocatorData["region"],
  profile: cell.profile,
@@ -73,6 +82,7 @@ function toPublicCell(cell: {
  citySlug: cell.citySlug,
  meetingDay: cell.meetingDay,
  meetingTime: cell.meetingTime,
+ // Coordenadas continuam dependendo de locationPublic (mapa ≠ endereço textual)
  latitude: cell.locationPublic ? cell.latitude : null,
  longitude: cell.locationPublic ? cell.longitude : null,
  };
