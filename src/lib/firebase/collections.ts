@@ -793,6 +793,28 @@ function toDate(value: Timestamp | Date | undefined): Date {
 }
 
 /**
+ * Converte Timestamps aninhados dentro do objeto `availability` de formulários
+ * dinâmicos em instâncias de `Date` serializáveis pelo Next.js App Router.
+ *
+ * Sem essa conversão, os campos `opensAt`, `closesAt` e `activatedAt` chegam
+ * como objetos Firestore Timestamp brutos (`{_seconds, _nanoseconds}`), causando
+ * o erro "Only plain objects... can be passed to Client Components".
+ */
+function serializeAvailability(raw: Record<string, unknown> | undefined): AvailabilityConfig {
+  if (!raw || typeof raw !== "object") {
+    return { mode: "manual" };
+  }
+  const data = raw as Record<string, unknown>;
+  return {
+    mode: (data.mode as AvailabilityMode) ?? "manual",
+    opensAt: data.opensAt ? toDate(data.opensAt as Timestamp | Date) : null,
+    closesAt: data.closesAt ? toDate(data.closesAt as Timestamp | Date) : null,
+    durationHours: typeof data.durationHours === "number" ? data.durationHours : null,
+    activatedAt: data.activatedAt ? toDate(data.activatedAt as Timestamp | Date) : null,
+  };
+}
+
+/**
  * Remove `id` (é o id do doc, nunca um campo) e troca `undefined` por
  * `FieldValue.delete()` — o SDK do Firestore rejeita `undefined` em
  * `set()`/`update()`, diferente do Prisma que aceitava `null`/omissão.
@@ -862,9 +884,7 @@ const dynamicFormConverter: FirestoreDataConverter<DynamicForm> = {
         Array.isArray(data.publishedFieldsSnapshot)
           ? (data.publishedFieldsSnapshot as DynamicFormField[])
           : null,
-      availability: (data.availability ?? {
-        mode: "manual",
-      }) as AvailabilityConfig,
+      availability: serializeAvailability(data.availability),
       adminStatus: (data.adminStatus ?? "draft") as FormAdminStatus,
       maxSubmissions: data.maxSubmissions ?? null,
       submissionCount: data.submissionCount ?? 0,
@@ -920,7 +940,7 @@ export const formSubmissionsDynRaw = (formId: string) =>
 // Coleção separada para não poluir o namespace existente de formRateLimit
 // ---------------------------------------------------------------------------
 
-import type { FormRateLimitEntry } from "@/lib/forms/types";
+import type { FormRateLimitEntry, AvailabilityMode } from "@/lib/forms/types";
 
 const dynamicFormRateLimitConverter: FirestoreDataConverter<FormRateLimitEntry> =
   {
