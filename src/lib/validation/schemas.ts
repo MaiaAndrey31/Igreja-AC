@@ -103,6 +103,72 @@ export const announcementSchema = z
     formId: z.string().trim().max(200).optional().or(z.literal("")).nullable(),
     maxSubmissions: z.coerce.number().int().min(1).optional().nullable(),
     featured: z.coerce.boolean().default(false),
+    // Campos do módulo de pop-ups
+    showAsPopup: z.coerce.boolean().default(false),
+    popupButtonText: z.string().trim().max(60).optional().or(z.literal("")).nullable(),
+    popupButtonUrl: z
+      .string()
+      .trim()
+      .max(500)
+      .optional()
+      .or(z.literal(""))
+      .nullable()
+      .refine((value) => !value || /^https?:\/\//i.test(value), {
+        message: "Use uma URL válida começando com http:// ou https://.",
+      }),
+    popupPriority: z.coerce.number().int().min(0).max(100).default(0),
+    popupFrequency: z.enum(["session", "lifetime", "visit"]).default("session"),
+  })
+  .refine((data) => !data.endDate || data.endDate >= data.startDate, {
+    message: "A data final não pode ser anterior à data de início.",
+    path: ["endDate"],
+  });
+
+/**
+ * Schema dedicado para eventos — separado de avisos comuns.
+ * Eventos exigem slug e possuem campos específicos como endereço,
+ * formulário vinculado e destaque na home.
+ */
+export const eventSchema = z
+  .object({
+    title: z.string().trim().min(2, "Informe um título.").max(100),
+    description: z.string().trim().min(10, "Descreva o evento.").max(1200),
+    imageUrl: z.string().trim().max(500).optional().or(z.literal("")),
+    instagramUrl: z
+      .string()
+      .trim()
+      .max(500)
+      .optional()
+      .or(z.literal(""))
+      .refine((value) => !value || /^https:\/\/(www\.)?(instagram\.com|instagr\.am)\//.test(value), {
+        message: "Cole um link válido do Instagram (instagram.com).",
+      }),
+    category: z.enum(["Culto especial", "Conferência", "Retiro", "Workshop", "Outro"]).default("Outro"),
+    startDate: z.coerce.date({ message: "Informe a data de início." }),
+    endDate: z.coerce.date().optional(),
+    published: z.coerce.boolean().default(true),
+    featured: z.coerce.boolean().default(false),
+    slug: z
+      .string()
+      .trim()
+      .min(2, "Informe um slug para o evento.")
+      .max(100)
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use apenas letras minúsculas, números e hífens."),
+    address: z.string().trim().max(300).optional().or(z.literal("")).nullable(),
+    formId: z.string().trim().max(200).optional().or(z.literal("")).nullable(),
+    maxSubmissions: z.coerce.number().int().min(1).optional().nullable(),
+    visualId: z.string().trim().max(60).optional().or(z.literal("")).nullable(),
+    groupUrl: z
+      .string()
+      .trim()
+      .max(500)
+      .optional()
+      .or(z.literal(""))
+      .nullable()
+      .refine((value) => !value || groupUrlRegex.test(value), {
+        message: "Use um link válido de grupo WhatsApp (chat.whatsapp.com/...) ou Telegram (t.me/...).",
+      }),
+    confirmationMessage: z.string().trim().max(1000).optional().or(z.literal("")).nullable(),
   })
   .refine((data) => !data.endDate || data.endDate >= data.startDate, {
     message: "A data final não pode ser anterior à data de início.",

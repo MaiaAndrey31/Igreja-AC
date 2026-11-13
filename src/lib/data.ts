@@ -156,12 +156,80 @@ export async function getPublishedFormBySlug(slug: string): Promise<DynamicForm 
 // ---------------------------------------------------------------------------
 
 /**
- * Lista todos os eventos/avisos publicados, ordenados por data de início.
- * Reutiliza a coleção `announcements` existente com os campos estendidos
- * do módulo de eventos (slug, address, formId, featured, etc.).
+ * DTO público de pop-up — apenas os campos necessários para renderização.
+ * Evita enviar dados administrativos (formId, maxSubmissions, etc.) ao cliente.
+ */
+export interface PopupAnnouncement {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string | null;
+  popupButtonText: string | null;
+  popupButtonUrl: string | null;
+  startDate: Date;
+  endDate: Date | null;
+  popupPriority: number;
+  popupFrequency: "session" | "lifetime" | "visit";
+}
+
+/**
+ * Lista avisos elegíveis para exibição como pop-up na home.
+ * Filtra por showAsPopup === true, published === true e período de vigência.
+ * Ordena por prioridade decrescente (maior valor = maior prioridade).
+ * Retorna DTO público sem campos administrativos sensíveis.
+ */
+export async function getEligiblePopups(): Promise<PopupAnnouncement[]> {
+  const now = new Date();
+  const snap = await announcementsCollection()
+    .where("showAsPopup", "==", true)
+    .where("published", "==", true)
+    .orderBy("popupPriority", "desc")
+    .get();
+
+  return snap.docs
+    .map((doc) => doc.data())
+    .filter((a) => {
+      // Vigência: startDate <= now && (endDate == null || endDate >= now)
+      if (a.startDate > now) return false;
+      if (a.endDate && a.endDate < now) return false;
+      return true;
+    })
+    .map((a): PopupAnnouncement => ({
+      id: a.id,
+      title: a.title,
+      description: a.description,
+      imageUrl: a.imageUrl ?? null,
+      popupButtonText: a.popupButtonText ?? null,
+      popupButtonUrl: a.popupButtonUrl ?? null,
+      startDate: a.startDate,
+      endDate: a.endDate ?? null,
+      popupPriority: a.popupPriority ?? 0,
+      popupFrequency: (a.popupFrequency as PopupAnnouncement["popupFrequency"]) ?? "session",
+    }));
+}
+
+/**
+ * Lista apenas eventos publicados (type === "event"), ordenados por data.
+ * Avisos comuns (sem campo type ou type !== "event") são excluídos.
  */
 export function getPublishedEvents(): Promise<Announcement[]> {
   return announcementsCollection()
+    .where("type", "==", "event")
+    .where("published", "==", true)
+    .orderBy("startDate", "asc")
+    .get()
+    .then((snap) => snap.docs.map((doc) => doc.data()));
+}
+
+/**
+ * Lista eventos destacados e publicados para exibição na home.
+ * Filtra por `type == "event"`, `featured == true` e `published == true`.
+ * Retorna array vazio quando não há eventos elegíveis (a seção não aparece).
+ */
+export function getPublishedFeaturedEvents(): Promise<Announcement[]> {
+  return announcementsCollection()
+    .where("type", "==", "event")
+    .where("featured", "==", true)
     .where("published", "==", true)
     .orderBy("startDate", "asc")
     .get()

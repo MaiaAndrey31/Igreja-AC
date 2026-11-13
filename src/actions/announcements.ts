@@ -36,6 +36,12 @@ function parseAnnouncementForm(formData: FormData, imageUrl: string) {
     visualId: formData.get("visualId") ?? "",
     groupUrl: formData.get("groupUrl") ?? "",
     confirmationMessage: formData.get("confirmationMessage") ?? "",
+    // Campos de pop-up
+    showAsPopup: formData.get("showAsPopup") === "on",
+    popupButtonText: formData.get("popupButtonText") ?? "",
+    popupButtonUrl: formData.get("popupButtonUrl") ?? "",
+    popupPriority: formData.get("popupPriority") ?? "0",
+    popupFrequency: formData.get("popupFrequency") ?? "session",
   });
 }
 

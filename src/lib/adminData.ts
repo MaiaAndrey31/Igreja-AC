@@ -52,6 +52,19 @@ export function getAllAnnouncements(): Promise<Announcement[]> {
     .then((snap) => snap.docs.map((doc) => doc.data()));
 }
 
+/**
+ * Lista apenas eventos (type === "event") para o painel /admin/eventos.
+ * Documentos antigos sem campo `type` são tratados como avisos comuns e
+ * não aparecem aqui — a separação é por escrita, não por migração.
+ */
+export function getAllEvents(): Promise<Announcement[]> {
+  return announcementsCollection()
+    .where("type", "==", "event")
+    .orderBy("startDate", "desc")
+    .get()
+    .then((snap) => snap.docs.map((doc) => doc.data()));
+}
+
 export function getAllGalleryImages(): Promise<GalleryImage[]> {
   return galleryCollection()
     .orderBy("order", "asc")

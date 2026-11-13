@@ -22,6 +22,12 @@ export interface AnnouncementItem {
   startDate: Date;
   endDate: Date | null;
   published: boolean;
+  // Campos de pop-up
+  showAsPopup: boolean;
+  popupButtonText: string | null;
+  popupButtonUrl: string | null;
+  popupPriority: number;
+  popupFrequency: "session" | "lifetime" | "visit";
 }
 
 const emptyState: ActionState = {};
@@ -97,6 +103,12 @@ interface AnnouncementFormValues {
   visualId: string;
   groupUrl: string;
   confirmationMessage: string;
+  // Campos de pop-up
+  showAsPopup: boolean;
+  popupButtonText: string;
+  popupButtonUrl: string;
+  popupPriority: string;
+  popupFrequency: "session" | "lifetime" | "visit";
 }
 
 function toFormValues(editing: AnnouncementItem | null): AnnouncementFormValues {
@@ -111,6 +123,11 @@ function toFormValues(editing: AnnouncementItem | null): AnnouncementFormValues 
     visualId: (editing as AnnouncementItem & { visualId?: string })?.visualId ?? "",
     groupUrl: (editing as AnnouncementItem & { groupUrl?: string })?.groupUrl ?? "",
     confirmationMessage: (editing as AnnouncementItem & { confirmationMessage?: string })?.confirmationMessage ?? "",
+    showAsPopup: editing?.showAsPopup ?? false,
+    popupButtonText: editing?.popupButtonText ?? "",
+    popupButtonUrl: editing?.popupButtonUrl ?? "",
+    popupPriority: String(editing?.popupPriority ?? 0),
+    popupFrequency: editing?.popupFrequency ?? "session",
   };
 }
 
@@ -282,6 +299,121 @@ function AnnouncementModal({
               maxLength={1000}
             />
           </FieldGroup>
+        </div>
+
+        {/* Seção: Pop-up na entrada do site */}
+        <div className="flex flex-col gap-4 rounded-lg border border-border-subtle p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-medium uppercase tracking-[0.15em] text-foreground-subtle">
+              Pop-up na Entrada do Site
+            </h3>
+            <Switch
+              label="Exibir como pop-up"
+              name="showAsPopup"
+              id="showAsPopup"
+              checked={values.showAsPopup}
+              onChange={(e) => setValues((v) => ({ ...v, showAsPopup: e.target.checked }))}
+            />
+          </div>
+
+          {values.showAsPopup && (
+            <>
+              <FieldGroup
+                label="Texto do botão de ação"
+                htmlFor="popupButtonText"
+                hint="Ex.: Saiba mais, Inscreva-se, Ver detalhes."
+              >
+                <Input
+                  id="popupButtonText"
+                  name="popupButtonText"
+                  value={values.popupButtonText}
+                  onChange={(e) => setValues((v) => ({ ...v, popupButtonText: e.target.value }))}
+                  placeholder="Saiba mais"
+                  maxLength={60}
+                />
+              </FieldGroup>
+
+              <FieldGroup
+                label="Link do botão"
+                htmlFor="popupButtonUrl"
+                hint="URL completa (https://...). O botão abre em nova aba."
+              >
+                <Input
+                  id="popupButtonUrl"
+                  name="popupButtonUrl"
+                  type="url"
+                  value={values.popupButtonUrl}
+                  onChange={(e) => setValues((v) => ({ ...v, popupButtonUrl: e.target.value }))}
+                  placeholder="https://..."
+                />
+              </FieldGroup>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FieldGroup
+                  label="Prioridade"
+                  htmlFor="popupPriority"
+                  hint="Maior valor = maior prioridade. Quando há múltiplos pop-ups elegíveis, o de maior prioridade é exibido."
+                >
+                  <Input
+                    id="popupPriority"
+                    name="popupPriority"
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={values.popupPriority}
+                    onChange={(e) => setValues((v) => ({ ...v, popupPriority: e.target.value }))}
+                  />
+                </FieldGroup>
+
+                <FieldGroup
+                  label="Frequência de exibição"
+                  htmlFor="popupFrequency"
+                >
+                  <Select
+                    id="popupFrequency"
+                    name="popupFrequency"
+                    value={values.popupFrequency}
+                    onChange={(e) =>
+                      setValues((v) => ({
+                        ...v,
+                        popupFrequency: e.target.value as "session" | "lifetime" | "visit",
+                      }))
+                    }
+                  >
+                    <option value="session">Uma vez por sessão</option>
+                    <option value="lifetime">Uma vez durante a vigência</option>
+                    <option value="visit">A cada nova visita</option>
+                  </Select>
+                </FieldGroup>
+              </div>
+
+              {/* Pré-visualização do pop-up */}
+              <button
+                type="button"
+                onClick={() => {
+                  const previewData = {
+                    id: "__preview__",
+                    title: values.title || "Título do aviso",
+                    description: values.description || "Descrição do aviso.",
+                    imageUrl: editing?.imageUrl ?? null,
+                    popupButtonText: values.popupButtonText || null,
+                    popupButtonUrl: values.popupButtonUrl || null,
+                    startDate: new Date(),
+                    endDate: null,
+                    popupPriority: Number(values.popupPriority) || 0,
+                    popupFrequency: values.popupFrequency,
+                  };
+                  // Abre modal de prévia usando o componente AnnouncementPopup em modo preview
+                  window.dispatchEvent(
+                    new CustomEvent("popup-preview", { detail: previewData })
+                  );
+                }}
+                className="self-start rounded-lg border border-border-subtle px-4 py-2 text-xs font-medium uppercase tracking-[0.15em] text-foreground-muted transition-colors hover:border-accent hover:text-accent"
+              >
+                Pré-visualizar pop-up
+              </button>
+            </>
+          )}
         </div>
 
         <Switch

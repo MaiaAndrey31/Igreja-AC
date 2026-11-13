@@ -218,6 +218,17 @@ export interface Announcement {
   confirmationMessage: string | null;
   /** Mensagens programadas vinculadas ao evento. */
   scheduledMessages: ScheduledMessage[];
+  // Campos do módulo de pop-ups
+  /** Exibir como pop-up na entrada do site. */
+  showAsPopup: boolean;
+  /** Texto do botão de ação do pop-up. */
+  popupButtonText: string | null;
+  /** URL do botão de ação do pop-up. */
+  popupButtonUrl: string | null;
+  /** Prioridade do pop-up (maior = mais prioritário). */
+  popupPriority: number;
+  /** Frequência de exibição: session, lifetime ou visit. */
+  popupFrequency: "session" | "lifetime" | "visit";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -252,6 +263,12 @@ const announcementConverter: FirestoreDataConverter<Announcement> = {
       scheduledMessages: Array.isArray(data.scheduledMessages)
         ? (data.scheduledMessages as ScheduledMessage[])
         : [],
+      // Campos de pop-up — valores padrão para documentos antigos sem esses campos
+      showAsPopup: data.showAsPopup ?? false,
+      popupButtonText: data.popupButtonText ?? null,
+      popupButtonUrl: data.popupButtonUrl ?? null,
+      popupPriority: data.popupPriority ?? 0,
+      popupFrequency: data.popupFrequency ?? "session",
       createdAt: toDate(data.createdAt),
       updatedAt: toDate(data.updatedAt),
     };

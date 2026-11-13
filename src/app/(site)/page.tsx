@@ -1,6 +1,7 @@
 import { Hero } from "@/components/home/Hero";
 import { OurStory } from "@/components/home/OurStory";
 import { NextService } from "@/components/home/NextService";
+import { FeaturedEvents } from "@/components/home/FeaturedEvents";
 import { CellReach } from "@/components/home/CellReach";
 import { Leadership } from "@/components/home/Leadership";
 import { LatestMessages } from "@/components/home/LatestMessages";
@@ -13,6 +14,7 @@ import { churchSchema } from "@/lib/schema";
 import { heroSubtitle, heroTitle } from "@/lib/heroCopy";
 import {
   getActiveCells,
+  getPublishedFeaturedEvents,
   getPublishedLeaders,
   getPublishedMessages,
   getPublishedMinistries,
@@ -38,7 +40,7 @@ export const dynamic = "force-dynamic";
  * tokens semânticos para dentro dela.
  */
 export default async function Home() {
-  const [settings, ministries, unit, services, cells, leaders, messages, socialLinks] = await Promise.all([
+  const [settings, ministries, unit, services, cells, leaders, messages, socialLinks, featuredEvents] = await Promise.all([
     getSiteSettings(),
     getPublishedMinistries(),
     getUnitInfo(),
@@ -47,6 +49,7 @@ export default async function Home() {
     getPublishedLeaders(),
     getPublishedMessages(6),
     getSocialLinks(),
+    getPublishedFeaturedEvents(),
   ]);
 
   const instagramHref = socialLinks.find((social) => social.platform === "instagram")?.href ?? "#";
@@ -69,6 +72,7 @@ export default async function Home() {
 
       <OurStory unit={unit} />
       <NextService unit={unit} services={services} />
+      <FeaturedEvents events={featuredEvents} />
       <CellReach unit={unit} />
       <Leadership leaders={leaders} />
       <LatestMessages messages={messages} instagramHref={instagramHref} />
