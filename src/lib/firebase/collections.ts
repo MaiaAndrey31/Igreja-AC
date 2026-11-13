@@ -150,7 +150,7 @@ const cellConverter: FirestoreDataConverter<Cell> = {
       longitude: data.longitude ?? null,
       geocodeStatus: data.geocodeStatus ?? "pending",
       reviewStatus: data.reviewStatus ?? "ok",
-      addressPublic: data.addressPublic ?? false,
+      addressPublic: data.addressPublic ?? true,
       locationPublic: data.locationPublic ?? false,
       sourceId: data.sourceId ?? null,
       createdAt: toDate(data.createdAt),

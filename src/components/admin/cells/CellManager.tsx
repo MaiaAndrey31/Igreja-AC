@@ -137,7 +137,7 @@ function toCellFormValues(editing: CellItem | null): CellFormValues {
     order: editing?.order ?? 0,
     active: editing?.active ?? true,
     published: editing?.published ?? false,
-    addressPublic: editing?.addressPublic ?? false,
+    addressPublic: editing?.addressPublic ?? true,
     locationPublic: editing?.locationPublic ?? false,
   };
 }

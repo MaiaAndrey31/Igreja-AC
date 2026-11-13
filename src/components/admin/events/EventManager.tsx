@@ -17,7 +17,17 @@ import { SubmitButton } from "@/components/ui/SubmitButton";
 import { useToast } from "@/components/ui/Toast";
 import { formatEventDate } from "@/lib/format";
 import { Copy, ExternalLink, Users } from "lucide-react";
-import type { DynamicForm } from "@/lib/firebase/collections";
+/**
+ * DTO mínimo de formulário para o seletor de vinculação.
+ * Deve corresponder ao tipo definido na página do servidor
+ * (src/app/admin/(dashboard)/eventos/page.tsx) para evitar
+ * passar objetos DynamicForm completos com Timestamps não serializáveis.
+ */
+export interface EventFormOption {
+  id: string;
+  title: string;
+  submissionCount: number;
+}
 
 export interface EventItem {
   id: string;
@@ -59,7 +69,7 @@ function slugify(text: string): string {
 
 interface EventManagerProps {
   items: EventItem[];
-  forms: DynamicForm[];
+  forms: EventFormOption[];
 }
 
 export function EventManager({ items, forms }: EventManagerProps) {
@@ -253,7 +263,7 @@ function EventModal({
   open: boolean;
   onClose: () => void;
   editing: EventItem | null;
-  forms: DynamicForm[];
+  forms: EventFormOption[];
 }) {
   const action = editing
     ? updateEventAction.bind(null, editing.id)
