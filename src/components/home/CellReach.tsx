@@ -20,15 +20,15 @@ import type { UnitInfo } from "@/lib/firebase/collections";
 export function CellReach({ unit }: { unit: UnitInfo }) {
   return (
     <section className="bg-background">
-      <div className="mx-auto max-w-7xl px-5 py-24 sm:px-8 sm:py-32">
+      <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28">
         <SectionEyebrow index={3} verseReference={unit.verseReference}>
           Comunidade que cuida
         </SectionEyebrow>
 
-        <div className="mt-12 grid items-center gap-12 lg:grid-cols-2">
+        <div className="mt-10 grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
           {/* Coluna esquerda — texto e botões */}
-          <Reveal className="flex flex-col gap-6">
-            <h2 className="font-display text-[clamp(2.25rem,7vw,5rem)] uppercase leading-[0.92] text-foreground">
+          <Reveal className="flex flex-col justify-center gap-6">
+            <h2 className="font-display text-[clamp(2rem,5vw,4rem)] uppercase leading-[0.92] text-foreground">
               Igreja também acontece numa sala de estar.
             </h2>
 
@@ -63,15 +63,15 @@ export function CellReach({ unit }: { unit: UnitInfo }) {
             </div>
           </Reveal>
 
-          {/* Coluna direita — fotografia editorial */}
-          <Reveal className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl lg:aspect-[3/4]">
+          {/* Coluna direita — fotografia horizontal (4:3) para mostrar o grupo reunido */}
+          <Reveal className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl">
             <Image
               src="/assets/cells.png"
-              alt="Pessoas reunidas em uma célula da Igreja Amor & Cuidado, compartilhando momentos de comunhão e estudo bíblico"
+              alt="Grupo de pessoas reunidas em uma célula da Igreja Amor & Cuidado, compartilhando comunhão e estudo bíblico"
               fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
-              quality={85}
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover object-center"
+              quality={90}
               priority={false}
             />
             {/* Overlay sutil para garantir contraste consistente com o fundo escuro */}
