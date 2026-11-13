@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { href: "/sobre", label: "Nossa história" },
   { href: "/ministerios", label: "Ministérios" },
   { href: "/celulas", label: "Células" },
+  { href: "/eventos", label: "Eventos" },
   { href: "/mensagens", label: "Mensagens" },
 ];
 

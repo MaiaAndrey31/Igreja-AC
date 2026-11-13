@@ -73,6 +73,23 @@
         { "fieldPath": "adminStatus", "order": "ASCENDING" },
         { "fieldPath": "slug", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "announcements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "slug", "order": "ASCENDING" },
+        { "fieldPath": "published", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "announcements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "featured", "order": "ASCENDING" },
+        { "fieldPath": "published", "order": "ASCENDING" },
+        { "fieldPath": "startDate", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

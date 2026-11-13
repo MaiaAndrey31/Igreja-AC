@@ -197,7 +197,19 @@ export interface Announcement {
   startDate: Date;
   endDate: Date | null;
   published: boolean;
-  // Novos campos do módulo de eventos
+  // Campos do módulo de eventos
+  /** Slug para URL pública amigável (/eventos/[slug]). */
+  slug: string | null;
+  /** Endereço/local do evento. */
+  address: string | null;
+  /** ID do formulário vinculado para inscrições. */
+  formId: string | null;
+  /** Limite máximo de inscrições (null = ilimitado). */
+  maxSubmissions: number | null;
+  /** Contador de inscrições recebidas via formulário vinculado. */
+  submissionCount: number;
+  /** Destacar na página inicial. */
+  featured: boolean;
   /** ID visual opcional da organização (não é chave primária). */
   visualId: string | null;
   /** Link do grupo WhatsApp/Telegram do evento. */
@@ -228,6 +240,12 @@ const announcementConverter: FirestoreDataConverter<Announcement> = {
       startDate: toDate(data.startDate),
       endDate: data.endDate ? toDate(data.endDate) : null,
       published: data.published,
+      slug: data.slug ?? null,
+      address: data.address ?? null,
+      formId: data.formId ?? null,
+      maxSubmissions: data.maxSubmissions ?? null,
+      submissionCount: data.submissionCount ?? 0,
+      featured: data.featured ?? false,
       visualId: data.visualId ?? null,
       groupUrl: data.groupUrl ?? null,
       confirmationMessage: data.confirmationMessage ?? null,

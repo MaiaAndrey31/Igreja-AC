@@ -89,6 +89,20 @@ export const announcementSchema = z
         message: "Use um link válido de grupo WhatsApp (chat.whatsapp.com/...) ou Telegram (t.me/...).",
       }),
     confirmationMessage: z.string().trim().max(1000).optional().or(z.literal("")).nullable(),
+    // Campos do módulo de eventos
+    slug: z
+      .string()
+      .trim()
+      .min(2, "Informe um slug.")
+      .max(100)
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use apenas letras minúsculas, números e hífens.")
+      .optional()
+      .or(z.literal(""))
+      .nullable(),
+    address: z.string().trim().max(300).optional().or(z.literal("")).nullable(),
+    formId: z.string().trim().max(200).optional().or(z.literal("")).nullable(),
+    maxSubmissions: z.coerce.number().int().min(1).optional().nullable(),
+    featured: z.coerce.boolean().default(false),
   })
   .refine((data) => !data.endDate || data.endDate >= data.startDate, {
     message: "A data final não pode ser anterior à data de início.",

@@ -33,6 +33,7 @@ const NAV_GROUPS = [
       { href: "/admin/ministerios", label: "Ministérios", icon: Sparkles },
       { href: "/admin/celulas", label: "Células", icon: Users },
       { href: "/admin/avisos", label: "Avisos", icon: Megaphone },
+      { href: "/admin/eventos", label: "Eventos", icon: PlayCircle },
       { href: "/admin/galeria", label: "Galeria", icon: Images },
       { href: "/admin/lideranca", label: "Liderança", icon: UserRound },
       { href: "/admin/mensagens", label: "Mensagens", icon: PlayCircle },

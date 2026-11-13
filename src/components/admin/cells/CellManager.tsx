@@ -21,6 +21,16 @@ export interface CellItem {
   whatsapp: string;
   logoUrl: string | null;
   active: boolean;
+  published: boolean;
+  addressPublic: boolean;
+  locationPublic: boolean;
+  city: string | null;
+  region: string | null;
+  profile: string | null;
+  meetingDay: string | null;
+  meetingTime: string | null;
+  latitude: number | null;
+  longitude: number | null;
   order: number;
 }
 
@@ -111,6 +121,9 @@ interface CellFormValues {
   whatsapp: string;
   order: number;
   active: boolean;
+  published: boolean;
+  addressPublic: boolean;
+  locationPublic: boolean;
 }
 
 function toCellFormValues(editing: CellItem | null): CellFormValues {
@@ -123,6 +136,9 @@ function toCellFormValues(editing: CellItem | null): CellFormValues {
     whatsapp: editing?.whatsapp ?? "",
     order: editing?.order ?? 0,
     active: editing?.active ?? true,
+    published: editing?.published ?? false,
+    addressPublic: editing?.addressPublic ?? false,
+    locationPublic: editing?.locationPublic ?? false,
   };
 }
 
@@ -234,6 +250,39 @@ function CellModal({ open, onClose, editing }: { open: boolean; onClose: () => v
           checked={values.active}
           onChange={(e) => setValues((v) => ({ ...v, active: e.target.checked }))}
         />
+
+        <Switch
+          label="Publicar no site"
+          name="published"
+          id="published"
+          checked={values.published}
+          onChange={(e) => setValues((v) => ({ ...v, published: e.target.checked }))}
+        />
+
+        <div className="rounded-lg border border-border-subtle p-4">
+          <p className="mb-3 text-xs font-medium uppercase tracking-[0.15em] text-foreground-subtle">
+            Privacidade do endereço
+          </p>
+          <div className="flex flex-col gap-3">
+            <Switch
+              label="Divulgar endereço completo no site"
+              name="addressPublic"
+              id="addressPublic"
+              checked={values.addressPublic}
+              onChange={(e) => setValues((v) => ({ ...v, addressPublic: e.target.checked }))}
+            />
+            <Switch
+              label="Divulgar localização exata no mapa"
+              name="locationPublic"
+              id="locationPublic"
+              checked={values.locationPublic}
+              onChange={(e) => setValues((v) => ({ ...v, locationPublic: e.target.checked }))}
+            />
+          </div>
+          <p className="mt-2 text-[11px] text-foreground-subtle">
+            Algumas reuniões acontecem em residências. Ative somente quando o líder autorizar a divulgação pública.
+          </p>
+        </div>
 
         {state.error && <p className="text-sm text-red-400">{state.error}</p>}
 

@@ -32,6 +32,9 @@ function parseCellForm(formData: FormData, logoUrl: string) {
     whatsapp: formData.get("whatsapp"),
     logoUrl,
     active: formData.get("active") === "on",
+    published: formData.get("published") === "on",
+    addressPublic: formData.get("addressPublic") === "on",
+    locationPublic: formData.get("locationPublic") === "on",
     order: formData.get("order") ?? 0,
   });
 }

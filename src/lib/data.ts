@@ -150,3 +150,46 @@ export async function getPublishedFormBySlug(slug: string): Promise<DynamicForm 
   if (snap.empty) return null;
   return snap.docs[0].data();
 }
+
+// ---------------------------------------------------------------------------
+// Events — eventos públicos (coleção announcements com campos estendidos)
+// ---------------------------------------------------------------------------
+
+/**
+ * Lista todos os eventos/avisos publicados, ordenados por data de início.
+ * Reutiliza a coleção `announcements` existente com os campos estendidos
+ * do módulo de eventos (slug, address, formId, featured, etc.).
+ */
+export function getPublishedEvents(): Promise<Announcement[]> {
+  return announcementsCollection()
+    .where("published", "==", true)
+    .orderBy("startDate", "asc")
+    .get()
+    .then((snap) => snap.docs.map((doc) => doc.data()));
+}
+
+/**
+ * Busca um evento publicado pelo slug. Retorna null se não existir ou se
+ * estiver despublicado.
+ */
+export async function getPublishedEventBySlug(slug: string): Promise<Announcement | null> {
+  const snap = await announcementsCollection()
+    .where("slug", "==", slug)
+    .where("published", "==", true)
+    .limit(1)
+    .get();
+  if (snap.empty) return null;
+  return snap.docs[0].data();
+}
+
+/**
+ * Lista eventos em destaque para a home (featured + published).
+ */
+export function getFeaturedEvents(): Promise<Announcement[]> {
+  return announcementsCollection()
+    .where("published", "==", true)
+    .where("featured", "==", true)
+    .orderBy("startDate", "asc")
+    .get()
+    .then((snap) => snap.docs.map((doc) => doc.data()));
+}
