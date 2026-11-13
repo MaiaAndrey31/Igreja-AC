@@ -9,6 +9,7 @@ import {
   deleteDynamicSubmissionAction,
   cancelDynamicSubmissionAction,
   exportSubmissionsCsvAction,
+  exportSubmissionsXmlAction,
 } from "@/actions/dynamicSubmissions";
 
 const PAGE_SIZE = 25;
@@ -121,15 +122,54 @@ export function SubmissionsTableClient({
             className="w-full rounded-lg border border-border-subtle bg-surface px-10 py-2.5 text-sm text-foreground placeholder:text-foreground-subtle focus:border-accent focus:outline-none"
           />
         </div>
-        <button
-          type="button"
-          onClick={handleExport}
-          disabled={exporting || submissions.length === 0}
-          className="flex shrink-0 items-center gap-2 rounded-lg border border-border-soft px-4 py-2.5 text-sm text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
-        >
-          <Download size={16} />
-          {exporting ? "Exportando..." : "Exportar CSV"}
-        </button>
+        <div className="relative flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting || submissions.length === 0}
+            className="flex items-center gap-2 rounded-lg border border-border-soft px-4 py-2.5 text-sm text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
+          >
+            <Download size={16} />
+            {exporting ? "Exportando..." : "Exportar CSV"}
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              if (submissions.length === 0) return;
+              setExporting(true);
+              try {
+                const result = await exportSubmissionsXmlAction(formId);
+                if ("error" in result) { push(result.error); return; }
+                const blob = new Blob([result.xml], { type: "application/xml;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = result.filename;
+                a.click();
+                URL.revokeObjectURL(url);
+                push("XML exportado com sucesso.");
+              } catch { push("Falha ao exportar XML."); }
+              finally { setExporting(false); }
+            }}
+            disabled={exporting || submissions.length === 0}
+            className="flex items-center gap-2 rounded-lg border border-border-soft px-4 py-2.5 text-sm text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
+          >
+            XML
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (submissions.length === 0) return;
+              // Route Handler protegida gera PDF real e retorna binário para download direto
+              window.open(`/api/export/pdf?formId=${encodeURIComponent(formId)}`, "_blank");
+              push("Download do PDF iniciado.");
+            }}
+            disabled={exporting || submissions.length === 0}
+            className="flex items-center gap-2 rounded-lg border border-border-soft px-4 py-2.5 text-sm text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
+          >
+            PDF
+          </button>
+        </div>
       </div>
 
       {/* Info */}
@@ -181,6 +221,19 @@ export function SubmissionsTableClient({
                 ))}
                 <td className="whitespace-nowrap px-4 py-3">
                   <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.open(
+                          `/api/export/pdf?formId=${encodeURIComponent(formId)}&submissionId=${encodeURIComponent(sub.id)}`,
+                          "_blank"
+                        );
+                      }}
+                      className="rounded-lg p-1.5 text-foreground-muted transition-colors hover:bg-surface-2 hover:text-accent"
+                      title="Baixar resposta em PDF"
+                    >
+                      <Download size={16} />
+                    </button>
                     {sub.status === "confirmed" && (
                       <button
                         type="button"
