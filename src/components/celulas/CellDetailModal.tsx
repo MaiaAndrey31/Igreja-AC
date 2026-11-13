@@ -6,24 +6,24 @@ import { X, MapPin, Clock, Navigation, Calendar } from "lucide-react";
 import { CELL_REGIONS, type CellRegion } from "@/lib/celulas/regions";
 
 export interface CellDetailData {
- id: string;
- publicName: string;
- region: CellRegion | null;
- profile: string | null;
- meetingDay: string | null;
- meetingTime: string | null;
- dayTime: string;
- neighborhood: string | null;
- city: string | null;
- /** Endereço completo — somente se autorizado para publicação. */
- publicAddress: string | null;
- latitude: number | null;
- longitude: number | null;
+  id: string;
+  publicName: string;
+  region: CellRegion | null;
+  profile: string | null;
+  meetingDay: string | null;
+  meetingTime: string | null;
+  dayTime: string;
+  neighborhood: string | null;
+  city: string | null;
+  /** Endereço completo — somente se autorizado para publicação. */
+  publicAddress: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 interface CellDetailModalProps {
- cell: CellDetailData | null;
- onClose: () => void;
+  cell: CellDetailData | null;
+  onClose: () => void;
 }
 
 /**
@@ -35,176 +35,204 @@ interface CellDetailModalProps {
  * - Responsivo com scroll interno no mobile.
  */
 export function CellDetailModal({ cell, onClose }: CellDetailModalProps) {
- const modalRef = useRef<HTMLDivElement>(null);
- const previousFocusRef = useRef<HTMLElement | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
- // Salva o elemento focado antes de abrir e restaura ao fechar
- useEffect(() => {
- if (cell) {
- previousFocusRef.current = document.activeElement as HTMLElement;
- // Foca no modal para acessibilidade
- modalRef.current?.focus();
- } else {
- previousFocusRef.current?.focus();
- previousFocusRef.current = null;
- }
- }, [cell]);
+  // Salva o elemento focado antes de abrir e restaura ao fechar
+  useEffect(() => {
+    if (cell) {
+      previousFocusRef.current = document.activeElement as HTMLElement;
+      // Foca no modal para acessibilidade
+      modalRef.current?.focus();
+    } else {
+      previousFocusRef.current?.focus();
+      previousFocusRef.current = null;
+    }
+  }, [cell]);
 
- // Fecha com Escape
- const handleKeyDown = useCallback(
- (e: KeyboardEvent) => {
- if (e.key === "Escape") onClose();
- },
- [onClose]
- );
+  // Fecha com Escape
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    },
+    [onClose]
+  );
 
- useEffect(() => {
- if (!cell) return;
- document.addEventListener("keydown", handleKeyDown);
- // Bloqueia scroll do body quando o modal está aberto
- document.body.style.overflow = "hidden";
- return () => {
- document.removeEventListener("keydown", handleKeyDown);
- document.body.style.overflow = "";
- };
- }, [cell, handleKeyDown]);
+  useEffect(() => {
+    if (!cell) return;
+    document.addEventListener("keydown", handleKeyDown);
+    // Bloqueia scroll do body quando o modal está aberto
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [cell, handleKeyDown]);
 
- if (!cell) return null;
+  if (!cell) return null;
 
- // Rota por coordenadas verificadas OU por endereço textual completo autorizado
- const hasCoords = cell.latitude != null && cell.longitude != null;
- const hasAddress = !!cell.publicAddress;
- const hasRoute = hasCoords || hasAddress;
+  // Rota por coordenadas verificadas OU por endereço textual completo autorizado
+  const hasCoords = cell.latitude != null && cell.longitude != null;
+  const hasAddress = !!cell.publicAddress;
+  const hasRoute = hasCoords || hasAddress;
 
- let googleMapsUrl: string | null = null;
- if (hasCoords) {
- googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${cell.latitude},${cell.longitude}`;
- } else if (hasAddress && cell.city) {
- // Endereço textual: codifica para URL segura
- const query = encodeURIComponent(`${cell.publicAddress}, ${cell.neighborhood ?? ""} ${cell.city}`);
- googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${query}`;
- }
+  let googleMapsUrl: string | null = null;
+  if (hasCoords) {
+    googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${cell.latitude},${cell.longitude}`;
+  } else if (hasAddress && cell.city) {
+    // Endereço textual: codifica para URL segura
+    const query = encodeURIComponent(`${cell.publicAddress}, ${cell.neighborhood ?? ""} ${cell.city}`);
+    googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${query}`;
+  }
 
- return (
- <div
- className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
- onClick={(e) => {
- // Fecha ao clicar fora do conteúdo do modal
- if (e.target === e.currentTarget) onClose();
- }}
- role="dialog"
- aria-modal="true"
- aria-label={`Detalhes da célula ${cell.publicName}`}
- >
- <div
- ref={modalRef}
- tabIndex={-1}
- className="relative max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border-subtle bg-surface shadow-2xl outline-none"
- >
- {/* Botão fechar */}
- <button
- type="button"
- onClick={onClose}
- className="absolute right-4 top-4 rounded-lg p-2 text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground"
- aria-label="Fechar"
- >
- <X size={20} />
- </button>
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      onClick={(e) => {
+        // Fecha ao clicar fora do conteúdo do modal
+        if (e.target === e.currentTarget) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Detalhes da célula ${cell.publicName}`}
+    >
+      <div
+        ref={modalRef}
+        tabIndex={-1}
+        className="relative max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border-subtle bg-surface shadow-2xl outline-none"
+      >
+        {/* Botão fechar */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 rounded-lg p-2 text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+          aria-label="Fechar"
+        >
+          <X size={20} />
+        </button>
 
- <div className="flex flex-col gap-5 p-6 sm:p-8">
- {/* Logo da igreja */}
- <div className="flex justify-center pb-2">
- <Image
- src="/assets/brand/BrancaHorizontal.png"
- alt="Igreja Amor e Cuidado"
- width={200}
- height={50}
- className="h-auto w-44 sm:w-52"
- priority={false}
- />
- </div>
+        <div className="flex flex-col gap-5 p-6 sm:p-8">
+          {/* Logo da igreja */}
+          <div className="flex justify-center pb-2">
+            <Image
+              src="/assets/brand/BrancaHorizontal.png"
+              alt="Igreja Amor e Cuidado"
+              width={200}
+              height={50}
+              className="h-auto w-44 sm:w-52"
+              priority={false}
+            />
+          </div>
 
- {/* Região badge */}
- {cell.region && (
- <span
- className="inline-block w-fit rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white"
- style={{ backgroundColor: CELL_REGIONS[cell.region].color }}
- >
- Região {CELL_REGIONS[cell.region].label}
- </span>
- )}
+          {/* Região badge */}
+          {cell.region && (
+            <span
+              className="inline-block w-fit rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white"
+              style={{ backgroundColor: CELL_REGIONS[cell.region].color }}
+            >
+              Região {CELL_REGIONS[cell.region].label}
+            </span>
+          )}
 
- {/* Nome */}
- <h2 className="font-display text-2xl tracking-wide text-foreground sm:text-3xl">
- {cell.publicName}
- </h2>
+          {/* Nome */}
+          <h2 className="font-display text-2xl tracking-wide text-foreground sm:text-3xl">
+            {cell.publicName}
+          </h2>
 
- {/* Informações */}
- <div className="flex flex-col gap-3 text-sm text-foreground-muted">
- {cell.profile && (
- <div className="flex items-start gap-3">
- <span className="mt-0.5 shrink-0 text-xs font-medium uppercase tracking-wider text-foreground-subtle">
- Perfil
- </span>
- <span>{cell.profile}</span>
- </div>
- )}
+          {/* Informações */}
+          <div className="flex flex-col gap-3 text-sm text-foreground-muted">
+            {cell.profile && (
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 shrink-0 text-xs font-medium uppercase tracking-wider text-foreground-subtle">
+                  Perfil
+                </span>
+                <span>{cell.profile}</span>
+              </div>
+            )}
 
- {cell.meetingDay && (
- <div className="flex items-start gap-3">
- <Calendar size={14} className="mt-0.5 shrink-0 text-foreground-subtle" />
- <span>{cell.meetingDay}</span>
- </div>
- )}
+            {cell.meetingDay && (
+              <div className="flex items-start gap-3">
+                <Calendar size={14} className="mt-0.5 shrink-0 text-foreground-subtle" />
+                <span>{cell.meetingDay}</span>
+              </div>
+            )}
 
- {cell.meetingTime && (
- <div className="flex items-start gap-3">
- <Clock size={14} className="mt-0.5 shrink-0 text-foreground-subtle" />
- <span>{cell.meetingTime}</span>
- </div>
- )}
+            {cell.meetingTime && (
+              <div className="flex items-start gap-3">
+                <Clock size={14} className="mt-0.5 shrink-0 text-foreground-subtle" />
+                <span>{cell.meetingTime}</span>
+              </div>
+            )}
 
- {!cell.meetingDay && !cell.meetingTime && cell.dayTime && (
- <div className="flex items-start gap-3">
- <Clock size={14} className="mt-0.5 shrink-0 text-foreground-subtle" />
- <span>{cell.dayTime}</span>
- </div>
- )}
+            {!cell.meetingDay && !cell.meetingTime && cell.dayTime && (
+              <div className="flex items-start gap-3">
+                <Clock size={14} className="mt-0.5 shrink-0 text-foreground-subtle" />
+                <span>{cell.dayTime}</span>
+              </div>
+            )}
 
- {cell.neighborhood && (
- <div className="flex items-start gap-3">
- <MapPin size={14} className="mt-0.5 shrink-0 text-foreground-subtle" />
- <span>
- {cell.neighborhood}
- {cell.city ? ` — ${cell.city}` : ""}
- </span>
- </div>
- )}
+            {/* Bairro/cidade SOMENTE quando NÃO há endereço público autorizado */}
+            {cell.neighborhood && !cell.publicAddress && (
+              <div className="flex items-start gap-3">
+                <MapPin size={14} className="mt-0.5 shrink-0 text-foreground-subtle" />
+                <span>
+                  {cell.neighborhood}
+                  {cell.city ? ` — ${cell.city}` : ""}
+                </span>
+              </div>
+            )}
+          </div>
 
- {cell.publicAddress && (
- <div className="rounded-lg border border-border-subtle bg-background px-4 py-3 text-xs text-foreground-muted">
- <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-foreground-subtle">
- Endereço
- </p>
- {cell.publicAddress}
- </div>
- )}
- </div>
+          {/* Endereço completo — somente quando autorizado (addressPublic === true) */}
+          {cell.publicAddress && (
+            <div className="flex flex-col gap-3 rounded-xl border border-border-subtle bg-background px-5 py-4">
+              <div className="flex items-start gap-3">
+                <MapPin size={16} className="mt-0.5 shrink-0 text-accent" />
+                <div className="flex flex-col gap-1">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground-subtle">
+                    Endereço da Célula
+                  </p>
+                  <p className="text-sm font-medium leading-snug text-foreground">
+                    {cell.publicAddress}
+                  </p>
+                  {cell.neighborhood && (
+                    <p className="text-xs text-foreground-muted">
+                      {cell.neighborhood}
+                      {cell.city ? ` — ${cell.city}` : ""}
+                    </p>
+                  )}
+                </div>
+              </div>
 
- {/* Botão de rota */}
- {googleMapsUrl && (
- <a
- href={googleMapsUrl}
- target="_blank"
- rel="noopener noreferrer"
- className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg border border-accent bg-accent px-6 py-3 text-sm font-medium text-accent-contrast transition-colors hover:bg-accent/90"
- >
- <Navigation size={16} />
- Como chegar
- </a>
- )}
- </div>
- </div>
- </div>
- );
+              {/* Botão Como chegar — imediatamente abaixo do endereço */}
+              {googleMapsUrl && (
+                <a
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-flex w-fit items-center justify-center gap-2 rounded-lg border border-accent bg-accent px-5 py-2.5 text-xs font-bold uppercase tracking-[0.15em] text-accent-contrast transition-colors hover:bg-accent/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                >
+                  <Navigation size={14} />
+                  Como chegar
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Botão de rota quando há coordenadas mas NÃO há endereço público autorizado */}
+          {!cell.publicAddress && googleMapsUrl && (
+            <a
+              href={googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg border border-accent bg-accent px-6 py-3 text-sm font-medium text-accent-contrast transition-colors hover:bg-accent/90"
+            >
+              <Navigation size={16} />
+              Como chegar
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
