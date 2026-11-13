@@ -66,11 +66,12 @@ export function CellReach({ unit }: { unit: UnitInfo }) {
           {/* Coluna direita — fotografia editorial */}
           <Reveal className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl lg:aspect-[3/4]">
             <Image
-              src="/assets/gallery/culto-pregacao.jpg"
-              alt="Pessoas reunidas em comunidade na Igreja Amor e Cuidado"
+              src="/assets/cells.png"
+              alt="Pessoas reunidas em uma célula da Igreja Amor & Cuidado, compartilhando momentos de comunhão e estudo bíblico"
               fill
-              sizes="(max-width: 1024px) 100vw, 50vw"
+              sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover"
+              quality={85}
               priority={false}
             />
             {/* Overlay sutil para garantir contraste consistente com o fundo escuro */}
