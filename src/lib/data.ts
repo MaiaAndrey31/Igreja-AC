@@ -177,35 +177,46 @@ export interface PopupAnnouncement {
  * Filtra por showAsPopup === true, published === true e período de vigência.
  * Ordena por prioridade decrescente (maior valor = maior prioridade).
  * Retorna DTO público sem campos administrativos sensíveis.
+ *
+ * Em caso de falha (índice ausente, timeout, etc.), registra o erro no
+ * servidor e retorna lista vazia — a home continua funcional sem pop-ups.
  */
 export async function getEligiblePopups(): Promise<PopupAnnouncement[]> {
-  const now = new Date();
-  const snap = await announcementsCollection()
-    .where("showAsPopup", "==", true)
-    .where("published", "==", true)
-    .orderBy("popupPriority", "desc")
-    .get();
+  try {
+    const now = new Date();
+    const snap = await announcementsCollection()
+      .where("published", "==", true)
+      .where("showAsPopup", "==", true)
+      .orderBy("popupPriority", "desc")
+      .get();
 
-  return snap.docs
-    .map((doc) => doc.data())
-    .filter((a) => {
-      // Vigência: startDate <= now && (endDate == null || endDate >= now)
-      if (a.startDate > now) return false;
-      if (a.endDate && a.endDate < now) return false;
-      return true;
-    })
-    .map((a): PopupAnnouncement => ({
-      id: a.id,
-      title: a.title,
-      description: a.description,
-      imageUrl: a.imageUrl ?? null,
-      popupButtonText: a.popupButtonText ?? null,
-      popupButtonUrl: a.popupButtonUrl ?? null,
-      startDate: a.startDate,
-      endDate: a.endDate ?? null,
-      popupPriority: a.popupPriority ?? 0,
-      popupFrequency: (a.popupFrequency as PopupAnnouncement["popupFrequency"]) ?? "session",
-    }));
+    return snap.docs
+      .map((doc) => doc.data())
+      .filter((a) => {
+        // Vigência: startDate <= now && (endDate == null || endDate >= now)
+        if (a.startDate > now) return false;
+        if (a.endDate && a.endDate < now) return false;
+        return true;
+      })
+      .map((a): PopupAnnouncement => ({
+        id: a.id,
+        title: a.title,
+        description: a.description,
+        imageUrl: a.imageUrl ?? null,
+        popupButtonText: a.popupButtonText ?? null,
+        popupButtonUrl: a.popupButtonUrl ?? null,
+        startDate: a.startDate,
+        endDate: a.endDate ?? null,
+        popupPriority: a.popupPriority ?? 0,
+        popupFrequency: (a.popupFrequency as PopupAnnouncement["popupFrequency"]) ?? "session",
+      }));
+  } catch (err) {
+    console.error("[getEligiblePopups] Falha ao consultar pop-ups:", {
+      name: (err as Error)?.name,
+      message: (err as Error)?.message,
+    });
+    return [];
+  }
 }
 
 /**

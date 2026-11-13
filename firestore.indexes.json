@@ -126,6 +126,15 @@
         { "fieldPath": "published", "order": "ASCENDING" },
         { "fieldPath": "popupPriority", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "announcements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "published", "order": "ASCENDING" },
+        { "fieldPath": "showAsPopup", "order": "ASCENDING" },
+        { "fieldPath": "popupPriority", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
