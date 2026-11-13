@@ -74,7 +74,7 @@ function toPublicCell(cell: {
  publicName: derivePublicName(cell.name),
  neighborhood: cell.neighborhood,
  // Endereço completo quando a célula está ativa e publicada
- publicAddress: isPublicCell && cell.address ? cell.address : null,
+ address: isPublicCell && cell.address ? cell.address : null,
  dayTime: cell.dayTime,
  region: cell.region as CellLocatorData["region"],
  profile: cell.profile,

@@ -32,7 +32,10 @@ export const cellSchema = z.object({
   whatsapp: z
     .string()
     .trim()
-    .regex(whatsappRegex, "Use o formato DDI+DDD+número, só dígitos (ex.: 5547999999999)."),
+    .regex(whatsappRegex, "Use o formato DDI+DDD+número, só dígitos (ex.: 5547999999999).")
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => v || ""),
   logoUrl: z.string().trim().max(500).optional().or(z.literal("")),
   active: z.coerce.boolean().default(true),
   published: z.coerce.boolean().default(false),

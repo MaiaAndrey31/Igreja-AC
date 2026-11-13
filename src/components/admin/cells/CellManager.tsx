@@ -215,16 +215,16 @@ function CellModal({ open, onClose, editing }: { open: boolean; onClose: () => v
         </FieldGroup>
 
         <FieldGroup
-          label="WhatsApp"
+          label="WhatsApp (opcional)"
           htmlFor="whatsapp"
-          hint="Somente dígitos, com DDI e DDD (ex.: 5547999999999)."
+          hint="Somente dígitos, com DDI e DDD (ex.: 5547999999999). Deixe em branco se não houver."
         >
           <Input
             id="whatsapp"
             name="whatsapp"
             value={values.whatsapp}
             onChange={(e) => setValues((v) => ({ ...v, whatsapp: e.target.value }))}
-            required
+            placeholder="5518999999999"
           />
         </FieldGroup>
 

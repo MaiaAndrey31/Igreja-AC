@@ -15,8 +15,8 @@ export interface CellDetailData {
   dayTime: string;
   neighborhood: string | null;
   city: string | null;
-  /** Endereço completo — somente se autorizado para publicação. */
-  publicAddress: string | null;
+  /** Endereço completo da célula (rua e número). Sempre enviado quando a célula é pública. */
+  address: string | null;
   latitude: number | null;
   longitude: number | null;
 }
@@ -33,6 +33,7 @@ interface CellDetailModalProps {
  * - Restaura foco ao elemento que abriu o modal.
  * - Trap de foco básico dentro do modal.
  * - Responsivo com scroll interno no mobile.
+ * - Seção de endereço SEMPRE visível (com fallback "Endereço não informado").
  */
 export function CellDetailModal({ cell, onClose }: CellDetailModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
@@ -71,17 +72,16 @@ export function CellDetailModal({ cell, onClose }: CellDetailModalProps) {
 
   if (!cell) return null;
 
-  // Rota por coordenadas verificadas OU por endereço textual completo autorizado
+  // Rota por coordenadas verificadas OU por endereço textual
   const hasCoords = cell.latitude != null && cell.longitude != null;
-  const hasAddress = !!cell.publicAddress;
-  const hasRoute = hasCoords || hasAddress;
+  const hasAddress = !!cell.address;
 
   let googleMapsUrl: string | null = null;
   if (hasCoords) {
     googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${cell.latitude},${cell.longitude}`;
   } else if (hasAddress && cell.city) {
     // Endereço textual: codifica para URL segura
-    const query = encodeURIComponent(`${cell.publicAddress}, ${cell.neighborhood ?? ""} ${cell.city}`);
+    const query = encodeURIComponent(`${cell.address}, ${cell.neighborhood ?? ""} ${cell.city}`);
     googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${query}`;
   }
 
@@ -170,67 +170,49 @@ export function CellDetailModal({ cell, onClose }: CellDetailModalProps) {
                 <span>{cell.dayTime}</span>
               </div>
             )}
-
-            {/* Bairro/cidade SOMENTE quando NÃO há endereço público autorizado */}
-            {cell.neighborhood && !cell.publicAddress && (
-              <div className="flex items-start gap-3">
-                <MapPin size={14} className="mt-0.5 shrink-0 text-foreground-subtle" />
-                <span>
-                  {cell.neighborhood}
-                  {cell.city ? ` — ${cell.city}` : ""}
-                </span>
-              </div>
-            )}
           </div>
 
-          {/* Endereço completo — somente quando autorizado (addressPublic === true) */}
-          {cell.publicAddress && (
-            <div className="flex flex-col gap-3 rounded-xl border border-border-subtle bg-background px-5 py-4">
-              <div className="flex items-start gap-3">
-                <MapPin size={16} className="mt-0.5 shrink-0 text-accent" />
-                <div className="flex flex-col gap-1">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground-subtle">
-                    Endereço da Célula
-                  </p>
-                  <p className="text-sm font-medium leading-snug text-foreground">
-                    {cell.publicAddress}
-                  </p>
-                  {cell.neighborhood && (
-                    <p className="text-xs text-foreground-muted">
-                      {cell.neighborhood}
-                      {cell.city ? ` — ${cell.city}` : ""}
+          {/* Endereço — SEMPRE visível, com fallback quando vazio */}
+          <div className="flex flex-col gap-3 rounded-xl border border-border-subtle bg-background px-5 py-4">
+            <div className="flex items-start gap-3">
+              <MapPin size={16} className="mt-0.5 shrink-0 text-accent" />
+              <div className="flex flex-col gap-1">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground-subtle">
+                  Endereço da Célula
+                </p>
+                {cell.address ? (
+                  <>
+                    <p className="text-sm font-medium leading-snug text-foreground">
+                      {cell.address}
                     </p>
-                  )}
-                </div>
+                    {cell.neighborhood && (
+                      <p className="text-xs text-foreground-muted">
+                        {cell.neighborhood}
+                        {cell.city ? ` — ${cell.city}` : ""}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm italic text-foreground-subtle">
+                    Endereço não informado
+                  </p>
+                )}
               </div>
-
-              {/* Botão Como chegar — imediatamente abaixo do endereço */}
-              {googleMapsUrl && (
-                <a
-                  href={googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 inline-flex w-fit items-center justify-center gap-2 rounded-lg border border-accent bg-accent px-5 py-2.5 text-xs font-bold uppercase tracking-[0.15em] text-accent-contrast transition-colors hover:bg-accent/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-                >
-                  <Navigation size={14} />
-                  Como chegar
-                </a>
-              )}
             </div>
-          )}
 
-          {/* Botão de rota quando há coordenadas mas NÃO há endereço público autorizado */}
-          {!cell.publicAddress && googleMapsUrl && (
-            <a
-              href={googleMapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg border border-accent bg-accent px-6 py-3 text-sm font-medium text-accent-contrast transition-colors hover:bg-accent/90"
-            >
-              <Navigation size={16} />
-              Como chegar
-            </a>
-          )}
+            {/* Botão Como chegar — somente quando há rota disponível */}
+            {googleMapsUrl && (
+              <a
+                href={googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-flex w-fit items-center justify-center gap-2 rounded-lg border border-accent bg-accent px-5 py-2.5 text-xs font-bold uppercase tracking-[0.15em] text-accent-contrast transition-colors hover:bg-accent/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+              >
+                <Navigation size={14} />
+                Como chegar
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </div>
