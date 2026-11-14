@@ -22,6 +22,13 @@ async function resolveImageUrl(formData: FormData, currentUrl: string): Promise<
   }
 }
 
+/** Normaliza valor de FormData: string vazia → undefined (para campos opcionais numéricos/data). */
+function emptyToUndefined(value: FormDataEntryValue | null): string | undefined {
+  if (value == null) return undefined;
+  const str = String(value).trim();
+  return str === "" ? undefined : str;
+}
+
 function parseEventForm(formData: FormData, imageUrl: string) {
   return eventSchema.safeParse({
     title: formData.get("title"),
@@ -29,13 +36,14 @@ function parseEventForm(formData: FormData, imageUrl: string) {
     imageUrl,
     category: formData.get("category"),
     startDate: formData.get("startDate"),
-    endDate: formData.get("endDate") || undefined,
+    // Campos opcionais: string vazia → undefined para evitar coerce.number("") → NaN
+    endDate: emptyToUndefined(formData.get("endDate")),
     published: formData.get("published") === "on",
     featured: formData.get("featured") === "on",
     slug: formData.get("slug") ?? "",
     address: formData.get("address") ?? "",
     formId: formData.get("formId") ?? "",
-    maxSubmissions: formData.get("maxSubmissions") ?? "",
+    maxSubmissions: emptyToUndefined(formData.get("maxSubmissions")),
     visualId: formData.get("visualId") ?? "",
     groupUrl: formData.get("groupUrl") ?? "",
     confirmationMessage: formData.get("confirmationMessage") ?? "",

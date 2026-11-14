@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/Switch";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { useToast } from "@/components/ui/Toast";
 import { formatEventDate } from "@/lib/format";
-import { Copy, ExternalLink, Users } from "lucide-react";
+import { Copy, ExternalLink, Users, X } from "lucide-react";
 /**
  * DTO mínimo de formulário para o seletor de vinculação.
  * Deve corresponder ao tipo definido na página do servidor
@@ -274,6 +274,37 @@ function EventModal({
     toFormValues(editing)
   );
 
+  // Estado do arquivo selecionado — preservado entre re-renders após erro de validação.
+  // O <input type="file"> não é controlado pelo React; sem este estado, o navegador
+  // limpa o input a cada re-render, forçando o admin a re-selecionar a imagem.
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    editing?.imageUrl ?? null
+  );
+
+  // Libera URL.createObjectURL anterior quando previewUrl muda ou componente desmonta
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSelectedFile(file);
+    // Cria prévia local imediata — liberada no cleanup do useEffect acima
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+  }
+
+  function handleRemoveImage() {
+    setSelectedFile(null);
+    setPreviewUrl(editing?.imageUrl ?? null);
+  }
+
   useEffect(() => {
     if (state.success) {
       push(editing ? "Evento atualizado." : "Evento criado.");
@@ -409,32 +440,42 @@ function EventModal({
             Identidade Visual
           </h3>
 
+          {/* Pré-visualização persistente — sobrevive a re-renders após erro de validação */}
+          {previewUrl && (
+            <div className="relative overflow-hidden rounded-lg border border-border-subtle bg-surface-2">
+              <img
+                src={previewUrl}
+                alt="Prévia do banner"
+                className="aspect-[16/9] w-full object-cover"
+              />
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="absolute right-2 top-2 rounded-full bg-black/60 p-1.5 text-white transition-colors hover:bg-black/80"
+                title="Remover imagem"
+              >
+                <X size={14} />
+              </button>
+              <p className="px-3 py-2 text-[11px] text-foreground-subtle">
+                {selectedFile ? selectedFile.name : "Imagem salva"}
+              </p>
+            </div>
+          )}
+
           <FieldGroup
             label="Banner do evento"
             htmlFor="imageFile"
             hint="JPG, PNG ou WebP, até 8MB. Aparece na página do evento e nos cartões."
           >
-            <Input
+            <input
               id="imageFile"
               name="imageFile"
               type="file"
               accept="image/jpeg,image/png,image/webp"
+              onChange={handleImageSelect}
+              className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-[11px] file:font-medium file:uppercase file:tracking-wider file:text-accent-contrast hover:file:bg-accent/90 focus:border-accent focus:outline-none"
             />
           </FieldGroup>
-
-          {editing?.imageUrl && (
-            <p className="text-xs text-foreground-subtle">
-              Banner atual:{" "}
-              <a
-                href={editing.imageUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-accent"
-              >
-                ver imagem
-              </a>
-            </p>
-          )}
 
           <FieldGroup
             label="ID Visual (opcional)"
