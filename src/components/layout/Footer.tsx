@@ -1,8 +1,41 @@
 import Image from "next/image";
 import Link from "next/link";
 import { SocialGlyph } from "@/components/ui/SocialGlyph";
-import { Pending } from "@/components/ui/Pending";
 import type { SocialLink, UnitInfo } from "@/lib/firebase/collections";
+
+/**
+ * Valida CNPJ com verificação dos dígitos verificadores (mod 11).
+ * Aceita valores com ou sem pontuação. Retorna false para CPF, e-mail,
+ * telefone, chave aleatória ou CNPJ inválido.
+ */
+function isValidCnpj(value: string): boolean {
+ const digits = value.replace(/\D/g, "");
+ if (digits.length !== 14) return false;
+ // Rejeita sequências repetidas (00000000000000, 11111111111111, etc.)
+ if (/^(\d)\1{13}$/.test(digits)) return false;
+
+ function calcDigit(nums: number[], factor: number): number {
+ let sum = 0;
+ for (let i = 0; i < nums.length; i++) {
+ sum += nums[i] * factor--;
+ if (factor < 2) factor = 9;
+ }
+ const remainder = sum % 11;
+ return remainder < 2 ? 0 : 11 - remainder;
+ }
+
+ const arr = digits.split("").map(Number);
+ const d1 = calcDigit(arr.slice(0, 12), 5);
+ if (arr[12] !== d1) return false;
+ const d2 = calcDigit(arr.slice(0, 13), 6);
+ return arr[13] === d2;
+}
+
+/** Formata 14 dígitos como XX.XXX.XXX/XXXX-XX. */
+function formatCnpj(value: string): string {
+ const d = value.replace(/\D/g, "");
+ return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12, 14)}`;
+}
 
 const INSTITUTIONAL_LINKS = [
   { href: "/sobre", label: "Nossa história" },
@@ -18,7 +51,14 @@ const LEGAL_LINKS = [
   { href: "/direito-de-imagem", label: "Direito de Imagem" },
 ];
 
-export function Footer({ unit, socialLinks }: { unit: UnitInfo; socialLinks: SocialLink[] }) {
+interface FooterProps {
+ unit: UnitInfo;
+ socialLinks: SocialLink[];
+ pixKey: string;
+ pixKeyType: string;
+}
+
+export function Footer({ unit, socialLinks, pixKey, pixKeyType }: FooterProps) {
   const year = new Date().getFullYear();
 
   return (
@@ -140,9 +180,11 @@ export function Footer({ unit, socialLinks }: { unit: UnitInfo; socialLinks: Soc
               © {year} {unit.name}
             </span>
             <span aria-hidden="true">·</span>
-            <span className="inline-flex items-center gap-2">
-              CNPJ <Pending />
-            </span>
+            {isValidCnpj(pixKey) && (
+              <span className="inline-flex items-center gap-2">
+                CNPJ {formatCnpj(pixKey)}
+              </span>
+            )}
           </p>
           <p>Tratamento de dados em conformidade com a LGPD (Lei nº 13.709/2018).</p>
         </div>

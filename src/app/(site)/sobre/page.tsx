@@ -11,7 +11,7 @@ import { getActiveCells, getPublishedLeaders, getServices, getUnitInfo } from "@
 export const metadata: Metadata = {
   title: "Nossa história",
   description:
-    "De uma garagem no centro de Adamantina, em 2013, a um templo próprio no Parque do Sol, em 2024 — a primeira extensão da rede Amor e Cuidado.",
+    "De uma garagem a um templo, nosso Deus é Deus de milagres! Conheça a trajetória da Igreja Amor e Cuidado em Adamantina.",
   alternates: { canonical: "/sobre" },
 };
 
@@ -66,9 +66,12 @@ export default async function SobrePage() {
         {/* História: garagem → congregação → templo novo */}
         <section className="grid gap-8 border-t border-border-subtle py-14 sm:grid-cols-12 sm:py-20">
           <p className="font-data text-[11px] uppercase tracking-[0.2em] text-accent sm:col-span-3">
-            De uma garagem a um templo próprio
+            Nossa história
           </p>
           <div className="sm:col-span-8">
+            <h2 className="font-display mb-6 text-[clamp(1.75rem,4vw,3rem)] uppercase leading-[0.95] text-foreground">
+              De uma garagem a um templo, nosso Deus é Deus de milagres!
+            </h2>
             <p className="text-lg leading-relaxed text-foreground-muted">{unit.originStory}</p>
             <p className="mt-5 text-base leading-relaxed text-foreground-subtle">{unit.newTempleStory}</p>
 
