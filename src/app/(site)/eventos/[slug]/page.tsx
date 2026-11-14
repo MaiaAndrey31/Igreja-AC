@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Calendar, Clock, MapPin, ArrowLeft, Users, MessageCircle } from "lucide-react";
-import { getPublishedEventBySlug, getUnitInfo } from "@/lib/data";
+import { getFormSlugById, getPublishedEventBySlug, getUnitInfo } from "@/lib/data";
 import type { UnitInfo } from "@/lib/firebase/collections";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { siteUrl } from "@/lib/site";
@@ -76,6 +76,10 @@ export default async function EventoPage({
  const { slug } = await params;
  const event = await getPublishedEventBySlug(slug);
  if (!event) notFound();
+
+ // Resolve o slug do formulário vinculado para construir a URL correta
+ // (/formularios/[slug] em vez de /formularios/[id], que retorna 404)
+ const formSlug = event.formId ? await getFormSlugById(event.formId) : null;
 
  const unit = await getUnitInfo();
 
@@ -171,9 +175,9 @@ export default async function EventoPage({
  {/* Ações */}
  {!isPast && (
  <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
- {event.formId ? (
+ {formSlug ? (
  <Link
- href={`/formularios/${event.formId}`}
+ href={`/formularios/${formSlug}`}
  className="inline-flex items-center justify-center gap-2 bg-accent px-8 py-4 text-[11px] font-medium uppercase tracking-[0.18em] text-accent-contrast transition-opacity hover:opacity-85"
  >
  <Users size={14} />

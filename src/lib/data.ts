@@ -151,6 +151,21 @@ export async function getPublishedFormBySlug(slug: string): Promise<DynamicForm 
   return snap.docs[0].data();
 }
 
+/**
+ * Busca o slug de um formulário publicado pelo ID do Firestore.
+ * Retorna null se o formulário não existir ou não estiver publicado.
+ * Usada pela página de detalhes do evento para construir a URL correta
+ * do botão "Inscreva-se" (/formularios/[slug] em vez de /formularios/[id]).
+ */
+export async function getFormSlugById(id: string): Promise<string | null> {
+ const snap = await formsCollection()
+ .where("adminStatus", "==", "published")
+ .limit(100)
+ .get();
+ const doc = snap.docs.find((d) => d.id === id);
+ return doc?.data().slug ?? null;
+}
+
 // ---------------------------------------------------------------------------
 // Events — eventos públicos (coleção announcements com campos estendidos)
 // ---------------------------------------------------------------------------
