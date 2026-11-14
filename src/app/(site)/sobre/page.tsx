@@ -3,7 +3,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Mail, MapPin, Phone } from "lucide-react";
 import { mapsUrl } from "@/lib/site";
-import { WEEKDAY_LABELS, groupServicesByWeekday } from "@/lib/services";
+import {
+  WEEKDAY_LABELS,
+  groupServicesByWeekday,
+  partitionServices,
+  filterFutureOneTimeServices,
+  sortOneTimeServices,
+} from "@/lib/services";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Pending } from "@/components/ui/Pending";
 import { getActiveCells, getPublishedLeaders, getServices, getUnitInfo } from "@/lib/data";
@@ -28,7 +34,10 @@ export default async function SobrePage() {
     getActiveCells(),
     getServices(),
   ]);
-  const week = groupServicesByWeekday(services);
+  const { weekly, oneTime } = partitionServices(services);
+  const week = groupServicesByWeekday(weekly);
+  // Acontecimentos únicos futuros (server-side usa Date.now() como referência).
+  const futureOneTime = sortOneTimeServices(filterFutureOneTimeServices(oneTime, new Date()));
   const neighborhoods = Array.from(new Set(cells.map((cell) => cell.neighborhood))).sort();
 
   return (
@@ -191,6 +200,36 @@ export default async function SobrePage() {
                 </div>
               ))}
             </dl>
+
+            {futureOneTime.length > 0 && (
+              <>
+                <p className="mt-6 text-[11px] uppercase tracking-[0.22em] text-foreground-subtle">
+                  Programação especial
+                </p>
+                <dl className="mt-4">
+                  {futureOneTime.map((service) => {
+                    const [y, m, d] = service.date!.split("-");
+                    const dateLabel = `${d}/${m}/${y}`;
+                    return (
+                      <div
+                        key={service.id}
+                        className="flex items-baseline justify-between gap-4 border-t border-border-subtle py-3 text-sm"
+                      >
+                        <dt className="text-foreground-subtle">
+                          {dateLabel}
+                          {service.label && (
+                            <span className="ml-2 text-[10px] uppercase tracking-[0.14em] text-accent">
+                              {service.label}
+                            </span>
+                          )}
+                        </dt>
+                        <dd className="font-data text-foreground">{service.time}</dd>
+                      </div>
+                    );
+                  })}
+                </dl>
+              </>
+            )}
           </div>
 
           <div className="sm:col-span-4">

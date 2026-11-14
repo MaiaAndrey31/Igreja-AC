@@ -533,9 +533,17 @@ export const socialLinksRaw = () => db().collection("socialLinks");
 // componente client, que não pode importar este módulo `server-only`).
 // ---------------------------------------------------------------------------
 
+/** "weekly" = recorrente por dia da semana; "one_time" = data específica. */
+export type ScheduleType = "weekly" | "one_time";
+
 export interface Service {
   id: string;
-  weekday: Weekday;
+  /** Tipo de programação. Documentos antigos sem este campo são tratados como "weekly". */
+  type: ScheduleType;
+  /** Dia da semana (0–6). Obrigatório quando `type === "weekly"`. */
+  weekday?: Weekday;
+  /** Data no formato YYYY-MM-DD. Obrigatória quando `type === "one_time"`. */
+  date?: string;
   time: string;
   label: string | null;
   order: number;
@@ -553,7 +561,10 @@ const serviceConverter: FirestoreDataConverter<Service> = {
     const data = snap.data();
     return {
       id: snap.id,
+      // Compatibilidade: documentos antigos sem `type` são semanais.
+      type: data.type ?? "weekly",
       weekday: data.weekday,
+      date: data.date,
       time: data.time,
       label: data.label ?? null,
       order: data.order,

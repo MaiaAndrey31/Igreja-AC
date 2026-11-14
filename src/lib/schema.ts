@@ -22,12 +22,16 @@ const SCHEMA_WEEKDAY = [
 ] as const;
 
 export function churchSchema(unit: UnitInfo, socialLinks: SocialLink[], services: Service[]) {
-  const openingHours = services.map((service) => ({
-    "@type": "OpeningHoursSpecification",
-    dayOfWeek: `https://schema.org/${SCHEMA_WEEKDAY[service.weekday]}`,
-    opens: service.time,
-    name: service.label ?? "Celebração",
-  }));
+  // Apenas horários semanais entram no schema.org — acontecimentos únicos não
+  // têm recorrência e não devem ser anunciados como OpeningHoursSpecification.
+  const openingHours = services
+    .filter((s) => s.type === "weekly" && s.weekday != null)
+    .map((service) => ({
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: `https://schema.org/${SCHEMA_WEEKDAY[service.weekday!]}`,
+      opens: service.time,
+      name: service.label ?? "Celebração",
+    }));
 
   return {
     "@context": "https://schema.org",

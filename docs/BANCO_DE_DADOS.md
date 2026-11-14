@@ -195,15 +195,25 @@ Esta coleção armazena **avisos comuns**, **eventos** e **pop-ups**, diferencia
 
 | Campo | Tipo | Obrigatório | Descrição |
 |-------|------|-------------|-----------|
-| `weekday` | string | ✅ | Dia da semana (Sunday–Saturday) |
-| `time` | string | ✅ | Horário (HH:mm) |
-| `label` | string \| null | ❌ | Rótulo opcional |
-| `active` | boolean | ✅ | Ativo |
-| `order` | number | ✅ | Ordem de exibição |
+| `type` | `"weekly"` \| `"one_time"` | ✅ | Tipo de programação. Documentos antigos sem este campo são tratados como `"weekly"`. |
+| `weekday` | number (0–6) | Condicional | Dia da semana (0 = domingo … 6 = sábado). Obrigatório quando `type === "weekly"`. |
+| `date` | string (YYYY-MM-DD) | Condicional | Data do acontecimento. Obrigatória quando `type === "one_time"`. |
+| `time` | string | ✅ | Horário (HH:MM, formato 24h) |
+| `label` | string \| null | ❌ | Rótulo opcional (ex.: "Culto da Família") |
+| `order` | number | ✅ | Ordem de exibição dentro do mesmo dia/data |
 | `createdAt` | Timestamp | ✅ | Data de criação |
 | `updatedAt` | Timestamp | ✅ | Última atualização |
 
-**Consulta pública:** `getServices()` → filtra por `active == true`, ordena por `order asc`.
+**Tipos de programação:**
+
+- **`weekly`**: cultos e reuniões recorrentes por dia da semana. Exigem `weekday`.
+- **`one_time`**: acontecimentos em data específica (vigílias, celebrações). Exigem `date`. Não possuem recorrência.
+
+**Compatibilidade:** documentos criados antes da introdução do campo `type` são interpretados como `"weekly"` pelo conversor Firestore (`fromFirestore`).
+
+**Consulta pública:** `getServices()` → ordena por `weekday asc, order asc`. A filtragem de acontecimentos únicos encerrados é feita em memória (`filterFutureOneTimeServices`) usando o fuso `America/Sao_Paulo`.
+
+**Schema.org:** apenas horários com `type === "weekly"` são incluídos como `OpeningHoursSpecification` no JSON-LD.
 
 ---
 

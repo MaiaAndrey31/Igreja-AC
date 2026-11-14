@@ -3,7 +3,15 @@
 import { useSyncExternalStore } from "react";
 import { MapPin } from "lucide-react";
 import { mapsUrl } from "@/lib/site";
-import { WEEKDAY_LABELS, groupServicesByWeekday, relativeDayLabel, upcomingServices } from "@/lib/services";
+import {
+  WEEKDAY_LABELS,
+  groupServicesByWeekday,
+  relativeDayLabel,
+  upcomingServices,
+  partitionServices,
+  filterFutureOneTimeServices,
+  sortOneTimeServices,
+} from "@/lib/services";
 import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
 import type { Service, UnitInfo } from "@/lib/firebase/collections";
 
@@ -36,8 +44,11 @@ export function NextService({ unit, services }: { unit: UnitInfo; services: Serv
   const minute = useSyncExternalStore(subscribeToMinute, currentMinute, noClockOnServer);
   const now = minute === null ? null : new Date(minute * MINUTE);
 
-  const next = now ? upcomingServices(services, now, 1)[0] : null;
-  const week = groupServicesByWeekday(services);
+  const { weekly, oneTime } = partitionServices(services);
+  const next = now ? upcomingServices(weekly, now, 1)[0] : null;
+  const week = groupServicesByWeekday(weekly);
+  // Acontecimentos únicos futuros, ordenados por proximidade.
+  const futureOneTime = now ? sortOneTimeServices(filterFutureOneTimeServices(oneTime, now)) : [];
 
   return (
     <section className="bg-background">
@@ -102,6 +113,36 @@ export function NextService({ unit, services }: { unit: UnitInfo; services: Serv
                 </div>
               ))}
             </dl>
+
+            {futureOneTime.length > 0 && (
+              <>
+                <p className="mt-8 text-[11px] uppercase tracking-[0.22em] text-foreground-subtle">
+                  Programação especial
+                </p>
+                <dl className="mt-5">
+                  {futureOneTime.map((service) => {
+                    const [y, m, d] = service.date!.split("-");
+                    const dateLabel = `${d}/${m}/${y}`;
+                    return (
+                      <div
+                        key={service.id}
+                        className="flex items-baseline justify-between gap-6 border-t border-border-subtle py-4"
+                      >
+                        <dt className="text-sm text-foreground-muted">
+                          {dateLabel}
+                          {service.label && (
+                            <span className="ml-2 text-[11px] uppercase tracking-[0.16em] text-accent">
+                              {service.label}
+                            </span>
+                          )}
+                        </dt>
+                        <dd className="font-data text-sm text-foreground">{service.time}</dd>
+                      </div>
+                    );
+                  })}
+                </dl>
+              </>
+            )}
           </div>
         </div>
       </div>

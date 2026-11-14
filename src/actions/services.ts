@@ -9,16 +9,29 @@ import type { Weekday } from "@/lib/services";
 import type { ActionState } from "@/actions/auth";
 
 function parseServiceForm(formData: FormData) {
-  const parsed = serviceSchema.safeParse({
-    weekday: formData.get("weekday"),
+  const type = formData.get("type") === "one_time" ? "one_time" : "weekly";
+
+  const raw: Record<string, unknown> = {
+    type,
     time: formData.get("time"),
     label: formData.get("label") ?? "",
     order: formData.get("order") ?? 0,
-  });
+  };
+
+  if (type === "weekly") {
+    raw.weekday = formData.get("weekday");
+  } else {
+    raw.date = formData.get("date");
+  }
+
+  const parsed = serviceSchema.safeParse(raw);
   if (!parsed.success) return parsed;
-  // `serviceSchema.weekday` já garante um inteiro 0-6 — o cast só nomeia o
-  // subtipo que `Weekday` representa, sem checagem adicional em runtime.
-  return { ...parsed, data: { ...parsed.data, weekday: parsed.data.weekday as Weekday } };
+
+  // Cast seguro: o discriminatedUnion já garantiu a forma correta.
+  if (parsed.data.type === "weekly") {
+    return { ...parsed, data: { ...parsed.data, weekday: parsed.data.weekday as Weekday } };
+  }
+  return parsed;
 }
 
 export async function createServiceAction(_prev: ActionState, formData: FormData): Promise<ActionState> {

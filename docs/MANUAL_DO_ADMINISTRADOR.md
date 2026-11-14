@@ -438,13 +438,37 @@ Menu lateral → **Galeria**
 ### Acessar:
 Menu lateral → **Horários**
 
-1. Clique em **"Novo horário"**
-2. Selecione o dia da semana e defina o horário
-3. Adicione um rótulo opcional (ex.: "Culto da Família")
-4. Ative **"Ativo"**
-5. Salve
+O módulo suporta dois tipos de programação:
 
-Os horários aparecem na seção "Próximo culto" da home e no schema.org para buscadores.
+### Horário Semanal (recorrente)
+
+Para cultos e reuniões que acontecem toda semana:
+
+1. Clique em **"Novo horário"**
+2. Em **Tipo de programação**, selecione **"Semanal"** (padrão)
+3. Selecione o **dia da semana** e defina o **horário**
+4. Adicione um rótulo opcional (ex.: "Culto da Família")
+5. Defina a ordem de exibição e salve
+
+Exemplo: Domingo, 19:00 — Culto da Família.
+
+### Acontecimento Único (data específica)
+
+Para vigílias, celebrações e eventos especiais que ocorrem apenas em uma data:
+
+1. Clique em **"Novo horário"**
+2. Em **Tipo de programação**, selecione **"Acontecimento único"**
+3. Preencha a **data do acontecimento** e o **horário**
+4. Adicione um rótulo opcional (ex.: "Culto Especial de Natal")
+5. Defina a ordem de exibição e salve
+
+Exemplo: 25/12/2026, 19:30 — Culto Especial de Natal.
+
+### Exibição pública
+
+- **Horários semanais**: aparecem na seção "Toda semana" da home e na página /sobre, além do schema.org para buscadores.
+- **Acontecimentos únicos**: aparecem na seção "Programação especial" somente enquanto a data+horário for futura (fuso `America/Sao_Paulo`). Após o encerramento, deixam de ser exibidos publicamente mas permanecem no painel administrativo para consulta.
+- A conversão entre tipos é suportada: basta editar um horário e alterar o campo "Tipo de programação".
 
 ---
 

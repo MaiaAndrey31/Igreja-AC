@@ -73,8 +73,11 @@
 ### ⏰ Alterar horários de culto
 
 1. Menu → **Horários** → edite ou crie novo
-2. Selecione dia da semana e horário
-3. Ative **"Ativo"** → salve
+2. Escolha o **Tipo de programação**:
+   - **Semanal**: selecione dia da semana e horário (cultos recorrentes)
+   - **Acontecimento único**: preencha data e horário (vigílias, celebrações)
+3. Adicione rótulo opcional → salve
+4. Acontecimentos únicos deixam de aparecer no site automaticamente após a data
 
 ### 🔗 Atualizar redes sociais
 

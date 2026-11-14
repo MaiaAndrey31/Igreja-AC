@@ -237,8 +237,8 @@ export const socialLinkSchema = z.object({
   order: z.coerce.number().int().min(0).default(0),
 });
 
-export const serviceSchema = z.object({
-  weekday: z.coerce.number().int().min(0).max(6),
+const serviceBaseSchema = z.object({
+  type: z.enum(["weekly", "one_time"]),
   time: z
     .string()
     .trim()
@@ -246,6 +246,20 @@ export const serviceSchema = z.object({
   label: z.string().trim().max(60).optional().or(z.literal("")),
   order: z.coerce.number().int().min(0).default(0),
 });
+
+export const serviceSchema = z.discriminatedUnion("type", [
+  serviceBaseSchema.extend({
+    type: z.literal("weekly"),
+    weekday: z.coerce.number().int().min(0).max(6),
+  }),
+  serviceBaseSchema.extend({
+    type: z.literal("one_time"),
+    date: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Use o formato YYYY-MM-DD."),
+  }),
+]);
 
 export const unitInfoSchema = z.object({
   name: z.string().trim().min(2, "Informe o nome da igreja.").max(120),
