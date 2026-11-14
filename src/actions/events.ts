@@ -13,7 +13,7 @@ async function resolveImageUrl(formData: FormData, currentUrl: string): Promise<
   const file = formData.get("imageFile");
   if (!(file instanceof File) || file.size === 0) return currentUrl;
   try {
-    const result = await saveImageUpload(file);
+    const result = await saveImageUpload(file, { category: "eventos" });
     return result.url;
   } catch (err) {
     if (err instanceof UploadValidationError) return { error: err.message };

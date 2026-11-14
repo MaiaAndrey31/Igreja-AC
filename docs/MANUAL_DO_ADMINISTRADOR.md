@@ -571,6 +571,15 @@ O sistema impede automaticamente novas inscrições quando o limite é atingido.
 2. Confirme que o tamanho é menor que 8MB
 3. Tente novamente; se persistir, entre em contato com o suporte técnico
 
+### Banner do evento não aparece na página pública
+1. Edite o evento no painel e confirme que a prévia da imagem aparece
+2. Verifique se o campo de imagem foi preenchido (não está vazio)
+3. Confirme que o evento está **publicado**
+4. Se a imagem foi enviada mas não aparece, aguarde alguns segundos e recarregue a página `/eventos`
+5. Se persistir, entre em contato com o suporte técnico informando o nome do evento
+
+> 💡 **Onde as imagens ficam armazenadas:** Todas as imagens enviadas pelo painel são salvas automaticamente no Vercel Blob (serviço de armazenamento em nuvem da Vercel), organizadas por categoria: banners de eventos em `uploads/eventos/`, fotos de células em `uploads/celulas/`, imagens de avisos em `uploads/avisos/`, etc. Não é necessário gerenciar arquivos manualmente — o sistema cuida disso automaticamente ao salvar.
+
 ### Página lenta ou com erro
 1. Aguarde alguns segundos e recarregue
 2. Verifique sua conexão com a internet

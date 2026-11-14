@@ -291,6 +291,25 @@ Aguarde alguns minutos para os índices serem provisionados.
 2. Verifique o token: `vercel env pull .env.local` (local) ou Settings → Environment Variables (produção)
 3. Verifique tamanho e formato da imagem (JPEG, PNG, WebP; máx. 8MB)
 
+### 8.7 Imagens dos eventos não aparecem na página pública
+
+**Sintoma:** Cards de eventos exibem fundo escuro com ícone de calendário em vez do banner enviado.
+
+**Causas possíveis:**
+- URL da imagem não persistida corretamente no Firestore (campo `imageUrl`)
+- Domínio do Vercel Blob não autorizado no `next.config.mjs`
+- Arquivo removido ou corrompido no Vercel Blob
+- Campo `imageUrl` vazio ou nulo no documento do evento
+
+**Diagnóstico:**
+1. No painel admin, edite o evento e verifique se a prévia da imagem aparece
+2. Inspecione o documento no Firestore Console: confirme que `imageUrl` contém uma URL válida do Vercel Blob (`https://...blob.vercel-storage.com/uploads/eventos/...`)
+3. Acesse a URL da imagem diretamente no navegador para confirmar que o arquivo existe
+4. Verifique em `next.config.mjs` se `*.public.blob.vercel-storage.com` está em `images.remotePatterns`
+
+**Organização dos uploads:**
+Os banners de eventos são armazenados em `uploads/eventos/{uuid}.webp` no Vercel Blob. Outros módulos usam subdiretórios correspondentes: `uploads/avisos/`, `uploads/celulas/`, `uploads/galeria/`, `uploads/lideranca/`, `uploads/ministerios/`, `uploads/hero/`, `uploads/outros/`.
+
 ### 8.5 Falhas em consultas e respostas de formulários
 
 **Sintoma:** Formulário público retorna erro 500 ou tela de indisponibilidade. Respostas não são salvas.

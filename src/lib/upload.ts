@@ -57,7 +57,29 @@ async function uploadToBlob(filename: string, buffer: Buffer, contentType: strin
   }
 }
 
-export async function saveImageUpload(file: File): Promise<UploadResult> {
+/**
+ * Subdiretórios lógicos para organização dos uploads no Vercel Blob.
+ * Estrutura: uploads/{categoria}/{uuid}.webp
+ */
+export type UploadCategory =
+  | "eventos"
+  | "avisos"
+  | "ministerios"
+  | "lideranca"
+  | "galeria"
+  | "celulas"
+  | "hero"
+  | "outros";
+
+export interface SaveImageOptions {
+  /** Subdiretório lógico dentro de `uploads/`. Padrão: "outros". */
+  category?: UploadCategory;
+}
+
+export async function saveImageUpload(
+  file: File,
+  options?: SaveImageOptions
+): Promise<UploadResult> {
   if (file.size === 0) throw new UploadValidationError("Arquivo vazio.");
   if (file.size > MAX_IMAGE_BYTES) {
     throw new UploadValidationError("Imagem maior que 8MB.");
@@ -80,7 +102,8 @@ export async function saveImageUpload(file: File): Promise<UploadResult> {
     throw new UploadValidationError("Imagem muito pequena (mínimo 200x200px).");
   }
 
-  const filename = `${randomUUID()}.webp`;
+  const category = options?.category ?? "outros";
+  const filename = `uploads/${category}/${randomUUID()}.webp`;
 
   // Reencoda sempre para WebP: descarta EXIF/GPS e qualquer payload anexado
   // ao arquivo original, além de reduzir peso (melhor Core Web Vitals).

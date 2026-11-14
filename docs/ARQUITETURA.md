@@ -177,10 +177,12 @@ Botão no admin → Route Handler (/api/export/pdf) → pdf-lib → Binário →
 ## 6. Uploads
 
 - **Serviço**: Vercel Blob (`@vercel/blob`).
-- **Função centralizada**: `saveImageUpload()` em `upload.ts`.
-- **Validação**: tipo MIME (JPEG, PNG, WebP), tamanho máximo (8MB), dimensões.
-- **Processamento**: `sharp` para redimensionamento e otimização antes do upload.
-- **URLs**: retornadas como strings absolutas (`https://...blob.vercel-storage.com/...`).
+- **Função centralizada**: `saveImageUpload(file, options?)` em `upload.ts`.
+- **Organização**: arquivos são armazenados em `uploads/{categoria}/{uuid}.webp`, onde `categoria` é um dos valores: `eventos`, `avisos`, `ministerios`, `lideranca`, `galeria`, `celulas`, `hero`, `outros`.
+- **Validação**: tipo MIME (JPEG, PNG, WebP), tamanho máximo (8MB), dimensões mínimas (200x200px).
+- **Processamento**: `sharp` reencoda sempre para WebP (remove EXIF/GPS, reduz peso), redimensiona até 2400px mantendo proporção.
+- **URLs**: retornadas como strings absolutas (`https://...blob.vercel-storage.com/uploads/{categoria}/{uuid}.webp`).
+- **Domínio autorizado**: `*.public.blob.vercel-storage.com` configurado em `next.config.mjs` (remotePatterns do `next/image` e CSP `img-src`/`media-src`).
 
 ---
 
