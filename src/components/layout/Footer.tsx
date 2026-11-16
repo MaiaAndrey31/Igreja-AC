@@ -189,17 +189,20 @@ export function Footer({ unit, socialLinks, pixKey, pixKeyType }: FooterProps) {
           <p>Tratamento de dados em conformidade com a LGPD (Lei nº 13.709/2018).</p>
         </div>
 
-        <div className="border-t border-border-subtle py-6 text-center text-[11px] text-foreground-subtle">
+        <div className="flex flex-col items-center gap-2 border-t border-border-subtle py-6 text-center text-[11px] text-foreground-subtle">
           <p>
             Desenvolvido por{" "}
             <a
-              href="https://www.instagram.com/oandreymaia.dev/"
+              href="https://freelings.com.br"
               target="_blank"
               rel="noopener noreferrer"
               className="text-foreground-muted underline decoration-accent/40 underline-offset-2 transition-colors hover:text-accent"
             >
-              Andrey Maia
+              Freelings Company
             </a>
+          </p>
+          <p className="font-data text-[10px] uppercase tracking-[0.18em] text-foreground-subtle/70">
+            Provérbios 16:3
           </p>
         </div>
       </div>
